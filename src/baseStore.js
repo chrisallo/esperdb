@@ -2,7 +2,7 @@
 let _memoryCache = {};
 
 export default class EsdbBaseStore {
-  init() {
+  init(name, version) {
     return Promise.resolve();
   }
   getItem(key) {

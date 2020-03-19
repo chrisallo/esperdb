@@ -16,7 +16,7 @@ A MongoDB-like document database wrapper for JavaScript. It wraps various databa
 
 ```ts
 interface EsdbBaseStore {
-  init(): Promise<void>;
+  init(name: string, version: number): Promise<void>;
   getItem(key: string): Promise<object>;
   setItem(key: string, item: object): Promise<object>;
   removeItem(key: string): Promise<object>;
@@ -44,21 +44,40 @@ import esdb from 'esdb';
 import CustomStoreImplementsEsdbBaseStore from '/your/base/path';
 
 esdb
+  .name('example.product.db')
   .version(2)
   .store(CustomStoreImplementsEsdbBaseStore)
   .schema({
+    // collection name
     name: 'Product',
+
+    // data model
     interface: {
       id: 'string',
       name: 'string',
       price: 'number',
       createdAt: 'number'
     },
+
+    // primary key
     key: 'id',
+
+    // indexes (optional)
     indexes: [
-      esdb.index(['name', 'price']),
-      esdb.index(['createdAt'])
-    ]
+      ['name', 'price'],
+      ['createdAt']
+    ],
+
+    // data migration function (optional)
+    migrate: currentVersion => {
+      return new Promise((resolve, reject) => {
+        switch (currentVersion) {
+          case 1:
+            break;
+        }
+        resolve();
+      });
+    }
   })
   .build()
   .then(db => {
@@ -121,3 +140,11 @@ interface EsdbEncryption {
   decrypt(cipher: string): Promise<object>;
 }
 ```
+
+## License
+
+**GNU GENERAL PUBLIC LICENSE**  
+Version 3, 29 June 2007  
+Copyright (C) 2007 Free Software Foundation, Inc. <https://fsf.org/>.
+
+Everyone is permitted to copy and distribute verbatim copies of this license document, but changing it is not allowed.
