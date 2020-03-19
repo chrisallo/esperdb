@@ -1,0 +1,20 @@
+{
+  "name": "esdb",
+  "version": "1.0.0",
+  "description": "A MongoDB-like document database wrapper for JavaScript. It wraps various database solutions like IndexedDB or AsyncStorage and turns them into a fully-indexed, document-based database.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/chrisallo/esdb.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/chrisallo/esdb/issues"
+  },
+  "homepage": "https://github.com/chrisallo/esdb#readme"
+}
