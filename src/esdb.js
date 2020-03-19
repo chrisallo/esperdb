@@ -1,4 +1,4 @@
-import EsdbBaseStore from './interface/baseStore';
+import EsdbStore from './interface/store';
 import EsdbEncryption from './interface/encryption';
 
 import EsdbCollection from './collection';
@@ -21,7 +21,7 @@ class Esdb {
       _vault = {
         name: '',
         version: 1,
-        baseStore: new EsdbBaseStore(),
+        store: new EsdbStore(),
         encryption: new EsdbEncryption(),
         schema: {},
         collection: {},
@@ -72,16 +72,16 @@ class Esdb {
     }
     return this;
   }
-  baseStore(val) {
+  store(val) {
     if (!_vault.error) {
-      if (val instanceof EsdbBaseStore) {
+      if (val instanceof EsdbStore) {
         if (this.isInit) {
-          _vault.baseStore = val;
+          _vault.store = val;
         } else {
           _vault.error = EsdbError.immutableReadyState();
         }
       } else {
-        _vault.error = EsdbError.invalidParams(`esdb.baseStore(${val})`);
+        _vault.error = EsdbError.invalidParams(`esdb.store(${val})`);
       }
     }
     return this;
@@ -132,6 +132,16 @@ class Esdb {
           cacheBlockLimit = DEFAULT_CACHE_BLOCK_LIMIT,
           cacheBlockFlush = DEFAULT_CACHE_BLOCK_FLUSH
         } = options;
+
+        const createCollectionOperations = [];
+        for (let name in _vault.schema) {
+          if (!_vault.collections[name]) {
+            const key = _vault.schema[name].key || 'id';
+            const col = (_vault.collections[name] = new EsdbCollection({ name, key }));
+            createCollectionOperations.push(col._init());
+          }
+        }
+
         // TODO:
       } else {
         EsdbLog.error(_vault.error.message);
@@ -161,7 +171,7 @@ class Esdb {
 export {
   EsdbQuery,
   EsdbError,
-  EsdbBaseStore,
+  EsdbStore,
   EsdbEncryption
 };
 export default new Esdb();

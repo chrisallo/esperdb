@@ -1,7 +1,16 @@
 
 export default class EsdbCollection {
-  constructor({ name = '' }) {
+  constructor({
+    name = '',
+    key = ''
+  }) {
     this.name = name;
+    this.key = key;
+  }
+  _init() {
+    return new Promise((resolve, reject) => {
+      // TODO:
+    });
   }
   get(key) {
     return new Promise((resolve, reject) => {

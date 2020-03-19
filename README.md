@@ -1,21 +1,43 @@
 # esdb
 
-A MongoDB-like document database wrapper for JavaScript. It wraps various database solutions like IndexedDB or AsyncStorage and turns them into a fully-indexed, document-based database.
+A document database wrapper for JavaScript. It wraps various key-value based database solutions and turns them into a fully-indexed, document-based database.
 
 ## Install
 
+`esdb` is distributed through NPM.
+
 ```
 ~$ npm install --save esdb
+```
+
+or
+
+```
+~$ yarn install esdb
+```
+
+## Build and test
+
+To build the source code, simply do
+
+```
+~$ npm run build
+```
+
+An automated test is ready for the stability of `esdb` which is written in `jest`.
+
+```
+~$ npm run test
 ```
 
 ## How to use
 
 ### Prerequisite
 
-`esdb` has a base interface that should be implemented. It wraps the key-value database so that `esdb` could use it as a storage. The interface looks like the below.
+`esdb` uses a store with an interface that should be implemented. It wraps the key-value database so that `esdb` could use it as a storage. The interface looks like the below.
 
 ```ts
-interface EsdbBaseStore {
+interface EsdbStore {
   init(name: string, version: number): Promise<void>;
   getItem(key: string): Promise<object>;
   setItem(key: string, item: object): Promise<object>;
@@ -41,12 +63,12 @@ Then we could get or create the new collection `Product` by doing this.
 
 ```js
 import esdb from 'esdb';
-import CustomStoreImplementsEsdbBaseStore from '/your/base/path';
+import customStoreImplementsEsdbStore from '/your/base/path';
 
 esdb
   .name('example.product.db')
   .version(2)
-  .store(CustomStoreImplementsEsdbBaseStore)
+  .store(customStoreImplementsEsdbStore)
   .schema({
     // collection name
     name: 'Product',
@@ -69,9 +91,9 @@ esdb
     ],
 
     // data migration function (optional)
-    migrate: currentVersion => {
+    migrate: oldVersion => {
       return new Promise((resolve, reject) => {
-        switch (currentVersion) {
+        switch (oldVersion) {
           case 1:
             break;
         }
@@ -97,10 +119,13 @@ A collection is a store of a certain type of data which has basic CRUD functiona
 const col = esdb.collection('Product');
 ```
 
-A collection instance has the following functions.
+A collection instance has the following functions and properties.
 
 ```ts
 interface EsdbCollection {
+  name: string;
+  key: string;
+
   get: (key: string) => Promise<object>;
   getAll: (where?: EsdbQuery) => Promise<object[]>;
   count: (where?: EsdbQuery) => Promise<number>;
@@ -116,17 +141,38 @@ interface EsdbCollection {
 }
 ```
 
+You can create a query for data manipulation and fetch operation. The following example shows that it fetches the products which price is less or equal to 2.
+
+```js
+import { EsdbQuery } from 'esdb';
+
+const getCheapProducts = () => {
+  return new Promise(async resolve => {
+    // create new query
+    const query = new EsdbQuery({
+      'price': { '<=': 2 }
+    });
+    query.offset = 0; // specify the offset
+    query.limit = 20; // specify the limit
+
+    const col = esdb.collection('Product');
+    const cheapProducts = await col.getAll(query);
+    resolve(cheapProducts);
+  });
+};
+```
+
 ## Encryption
 
 You can put your own encryption algorithm into the database. On the initialization, you can set the algorithm like the below.
 
 ```js
-import CustomEncryption from '/your/encrypt/path';
+import customEncryption from '/your/encrypt/path';
 
 esdb
   .version(2)
-  .store(CustomStoreImplementsEsdbBaseStore)
-  .encrypt(CustomEncryption)
+  .store(customStoreImplementsEsdbStore)
+  .encrypt(customEncryption)
   ...
   .build()
   ...

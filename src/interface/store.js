@@ -1,7 +1,7 @@
 
 let _memoryCache = {};
 
-export default class EsdbBaseStore {
+export default class EsdbStore {
   init() {
     return Promise.resolve();
   }
