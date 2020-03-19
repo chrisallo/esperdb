@@ -1,9 +1,10 @@
 {
   "name": "esdb",
   "version": "1.0.0",
-  "description": "A MongoDB-like document database wrapper for JavaScript. It wraps various database solutions like IndexedDB or AsyncStorage and turns them into a fully-indexed, document-based database.",
-  "main": "index.js",
+  "description": "A MongoDB-like document database wrapper for JavaScript.",
+  "main": "esdb.min.js",
   "scripts": {
+    "build": "rollup -c",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
@@ -16,5 +17,22 @@
   "bugs": {
     "url": "https://github.com/chrisallo/esdb/issues"
   },
-  "homepage": "https://github.com/chrisallo/esdb#readme"
+  "homepage": "https://github.com/chrisallo/esdb#readme",
+  "devDependencies": {
+    "@babel/core": "^7.8.7",
+    "@babel/preset-env": "^7.8.7",
+    "babel-loader": "^8.0.6",
+    "eslint": "^6.8.0",
+    "prettier": "^1.19.1",
+    "rollup": "^2.1.0",
+    "rollup-plugin-babel": "^4.4.0",
+    "rollup-plugin-banner": "^0.2.1",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-eslint": "^7.0.0",
+    "rollup-plugin-filesize": "^6.2.1",
+    "rollup-plugin-json": "^4.0.0",
+    "rollup-plugin-node-resolve": "^5.2.0",
+    "rollup-plugin-progress": "^1.1.1",
+    "rollup-plugin-uglify": "^6.0.4"
+  }
 }

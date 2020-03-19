@@ -1,6 +1,8 @@
-import { EsdbBaseStore, EsdbEncryption } from '..';
-import EsdbError from './error';
+import EsdbBaseStore from './baseStore';
+import EsdbEncryption from './encryption';
+import EsdbQuery from './query';
 import EsdbCollection from './collection';
+import EsdbError from './error';
 import EsdbLog from './utils/log';
 
 /// default options
@@ -12,7 +14,7 @@ const DEFAULT_CACHE_BLOCK_FLUSH = 16;
 let _instance = null;
 let _vault = null;
 
-export default class Esdb {
+class Esdb {
   constructor() {
     if (!_instance) {
       _vault = {
@@ -99,18 +101,18 @@ export default class Esdb {
   }
   schema(val) {
     if (!_vault.error) {
-      const { name, interface, key, indexes = [], migrate = null } = val;
+      const { name, model, key, indexes = [], migrate = null } = val;
       if (typeof name === 'string' && name
-        && typeof interface === 'object' && interface
+        && typeof model === 'object' && model
         && typeof key === 'string' && key
         && Array.isArray(indexes)
         && indexes.every(index =>
           Array.isArray(index)
           && index.length > 0
-          && index.every(column => typeof column === 'string' && interface.hasOwnProperty(column)))
+          && index.every(column => typeof column === 'string' && model.hasOwnProperty(column)))
         && (typeof migrate === 'function' || migrate === null)) {
         if (this.isInit) {
-          _vault.schema[name] = { interface, key, indexes, migrate };
+          _vault.schema[name] = { model, key, indexes, migrate };
         } else {
           _vault.error = EsdbError.immutableReadyState();
         }
@@ -154,3 +156,11 @@ export default class Esdb {
     return col;
   }
 }
+
+export {
+  EsdbQuery,
+  EsdbError,
+  EsdbBaseStore,
+  EsdbEncryption
+};
+export default new Esdb();

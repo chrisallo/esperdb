@@ -52,7 +52,7 @@ esdb
     name: 'Product',
 
     // data model
-    interface: {
+    model: {
       id: 'string',
       name: 'string',
       price: 'number',
