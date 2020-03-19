@@ -79,7 +79,7 @@ esdb
       });
     }
   })
-  .build()
+  .build(options)
   .then(db => {
     // db is equivalent to `esdb`
     // implement the logic here

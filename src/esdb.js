@@ -1,73 +1,104 @@
 import { EsdbBaseStore, EsdbEncryption } from '..';
 import EsdbError from './error';
+import EsdbCollection from './collection';
+import EsdbLog from './utils/log';
 
-const vault = new WeakMap();
+/// default options
+const DEFAULT_BATCH_SIZE = 64;
+const DEFAULT_BATCH_INTERVAL = 200;
+const DEFAULT_CACHE_BLOCK_LIMIT = 64;
+const DEFAULT_CACHE_BLOCK_FLUSH = 16;
+
+let _instance = null;
+let _vault = null;
 
 export default class Esdb {
   constructor() {
-    vault.set(this, {
-      name: '',
-      version: 1,
-      baseStore: EsdbBaseStore,
-      encryption: EsdbEncryption,
-      schema: {},
-      error: null,
-      state: Esdb.State.INIT
-    });
+    if (!_instance) {
+      _vault = {
+        name: '',
+        version: 1,
+        baseStore: new EsdbBaseStore(),
+        encryption: new EsdbEncryption(),
+        schema: {},
+        collection: {},
+        error: null,
+        state: Esdb.State.INIT
+      };
+      _instance = this;
+    }
+    return _instance;
   }
   static get State() {
     return {
       INIT: 'init',
-      BUILT: 'built'
+      READY: 'ready'
     };
   }
+  get isInit() {
+    return _vault.state === Esdb.State.INIT;
+  }
+  get isReady() {
+    return _vault.state === Esdb.State.READY;
+  }
   name(val) {
-    const db = vault.get(this);
-    if (!db.error) {
+    if (!_vault.error) {
       if (typeof val === 'string' && val) {
-        db.name = val;
+        if (this.isInit) {
+          _vault.name = val;
+        } else {
+          _vault.error = EsdbError.immutableReadyState();
+        }
       } else {
-        db.error = EsdbError.invalidParams(`esdb.name(${val})`);
+        _vault.error = EsdbError.invalidParams(`esdb.name(${val})`);
       }
     }
     return this;
   }
   version(val) {
-    const db = vault.get(this);
-    if (!db.error) {
+    if (!_vault.error) {
       if (typeof val === 'number' && val > 0) {
-        db.version = val;
+        if (this.isInit) {
+          _vault.version = val;
+        } else {
+          _vault.error = EsdbError.immutableReadyState();
+        }
       } else {
-        db.error = EsdbError.invalidParams(`esdb.version(${val})`);
+        _vault.error = EsdbError.invalidParams(`esdb.version(${val})`);
       }
     }
     return this;
   }
   baseStore(val) {
-    const db = vault.get(this);
-    if (!db.error) {
+    if (!_vault.error) {
       if (val instanceof EsdbBaseStore) {
-        db.baseStore = val;
+        if (this.isInit) {
+          _vault.baseStore = val;
+        } else {
+          _vault.error = EsdbError.immutableReadyState();
+        }
       } else {
-        db.error = EsdbError.invalidParams(`esdb.baseStore(${val})`);
+        _vault.error = EsdbError.invalidParams(`esdb.baseStore(${val})`);
       }
     }
     return this;
   }
   encryption(val) {
-    const db = vault.get(this);
-    if (!db.error) {
+    if (!_vault.error) {
       if (val instanceof EsdbEncryption) {
-        db.encryption = val;
+        if (this.isInit) {
+          _vault.encryption = val;
+        } else {
+          _vault.error = EsdbError.immutableReadyState();
+        }
       } else {
-        db.error = EsdbError.invalidParams(`esdb.encryption(${val})`);
+        _vault.error = EsdbError.invalidParams(`esdb.encryption(${val})`);
       }
     }
     return this;
   }
   schema(val) {
-    const db = vault.get(this);
-    if (!db.error) {
+    if (!_vault.error) {
       const { name, interface, key, indexes = [], migrate = null } = val;
       if (typeof name === 'string' && name
         && typeof interface === 'object' && interface
@@ -78,22 +109,48 @@ export default class Esdb {
           && index.length > 0
           && index.every(column => typeof column === 'string' && interface.hasOwnProperty(column)))
         && (typeof migrate === 'function' || migrate === null)) {
-        db.schema[name] = { interface, key, indexes, migrate };
+        if (this.isInit) {
+          _vault.schema[name] = { interface, key, indexes, migrate };
+        } else {
+          _vault.error = EsdbError.immutableReadyState();
+        }
       } else {
-        db.error = EsdbError.invalidParams(`esdb.schema(${val})`);
+        _vault.error = EsdbError.invalidParams(`esdb.schema(${val})`);
       }
     }
     return this;
   }
-  build() {
-    const db = vault.get(this);
+  build(options = {}) {
     return new Promise((resolve, reject) => {
-      if (!db.error) {
+      if (!_vault.error) {
+        const {
+          batchSize = DEFAULT_BATCH_SIZE,
+          batchInterval = DEFAULT_BATCH_INTERVAL,
+          cacheBlockLimit = DEFAULT_CACHE_BLOCK_LIMIT,
+          cacheBlockFlush = DEFAULT_CACHE_BLOCK_FLUSH
+        } = options;
         // TODO:
       } else {
-        console.error(db.error.message);
-        reject(db.error);
+        EsdbLog.error(_vault.error.message);
+        reject(_vault.error);
       }
     });
+  }
+  collection(name) {
+    let col = null;
+    if (!_vault.error) {
+      if (this.isReady) {
+        if (typeof name === 'string'
+          && _vault.collection.hasOwnProperty(name)
+          && _vault.collection[name] instanceof EsdbCollection) {
+          col = _vault.collection[name];
+        } else {
+          EsdbLog.error(EsdbError.invalidParams(`esdb.collection(${name})`));
+        }
+      } else {
+        EsdbLog.error(EsdbError.databaseNotReady());
+      }
+    }
+    return col;
   }
 }
