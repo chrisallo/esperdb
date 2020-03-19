@@ -1,7 +1,8 @@
-import EsdbBaseStore from './baseStore';
-import EsdbEncryption from './encryption';
-import EsdbQuery from './query';
+import EsdbBaseStore from './interface/baseStore';
+import EsdbEncryption from './interface/encryption';
+
 import EsdbCollection from './collection';
+import EsdbQuery from './query';
 import EsdbError from './error';
 import EsdbLog from './utils/log';
 
