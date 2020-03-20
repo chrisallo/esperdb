@@ -13,10 +13,12 @@ export default class EsdbMutex {
     }
   }
   unlock() {
-    this.locked = false;
-    if (this.queue.length > 0) {
-      const routine = this.queue.shift();
-      this.lock(routine);
+    if (this.locked) {
+      this.locked = false;
+      if (this.queue.length > 0) {
+        const routine = this.queue.shift();
+        this.lock(routine);
+      }
     }
   }
 }
