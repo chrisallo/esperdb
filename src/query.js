@@ -1,8 +1,6 @@
 import EsdbLog from "./utils/log";
 import { EsdbError } from "./esdb";
 
-const DEFAULT_LIMIT = Infinity;
-
 const _match = (item, conditions) => {
   try {
     for (let key in conditions) {
@@ -184,10 +182,6 @@ const _match = (item, conditions) => {
 export default class EsdbQuery {
   constructor(cond) {
     this.conditions = cond;
-    this.offset = 0;
-    this.limit = DEFAULT_LIMIT;
-    this.index = null;
-    this.order = 1;
   }
   static get Command() {
     return {

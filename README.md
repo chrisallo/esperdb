@@ -125,7 +125,7 @@ interface EsdbCollection {
   key: string;
 
   get: (key: string) => Promise<object>;
-  getAll: (where?: EsdbQuery) => Promise<object[]>;
+  getAll: (where?: EsdbQuery, options?: { offset?: number, limit?: number }) => Promise<object[]>;
   count: (where?: EsdbQuery) => Promise<number>;
 
   insert: (doc: object) => Promise<object>;

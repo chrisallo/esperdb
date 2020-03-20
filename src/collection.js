@@ -1,5 +1,6 @@
 import { EsdbError } from "./esdb";
 import EsdbMutex from "./utils/mutex";
+import EsdbQuery from "./query";
 
 const _kernel = new WeakMap();
 const _mutex = new WeakMap();
@@ -17,144 +18,202 @@ export default class EsdbCollection {
   }
   get(key) {
     return new Promise((resolve, reject) => {
-      const kernel = _kernel.get(this);
-      if (kernel) {
-        const mutex = _mutex.get(this);
-        mutex.lock(async unlock => {
-          try {
-            const item = await kernel.get(this, key);
-            unlock();
-            resolve(item);
-          } catch (e) {
-            unlock();
-            reject(e);
-          }
-        });
+      if (typeof key === 'string') {
+        const kernel = _kernel.get(this);
+        if (kernel) {
+          const mutex = _mutex.get(this);
+          mutex.lock(async unlock => {
+            try {
+              resolve(await kernel.get(this, key));
+            } catch (e) {
+              reject(e);
+            } finally {
+              unlock();
+            }
+          });
+        } else {
+          reject(EsdbError.kernelNotLoaded());
+        }
       } else {
-        reject(EsdbError.kernelNotLoaded());
+        reject(EsdbError.invalidParams(`collection.get(${key})`));
       }
     });
   }
-  getAll(where) {
+  getAll(where, options = null) {
     return new Promise((resolve, reject) => {
-      const kernel = _kernel.get(this);
-      if (kernel) {
-        const mutex = _mutex.get(this);
-        mutex.lock(async unlock => {
-          // TODO:
-          unlock();
-        });
+      if ((where instanceof EsdbQuery || where === null)
+        && (typeof options === 'object') || (typeof options === 'undefined')) {
+        const kernel = _kernel.get(this);
+        if (kernel) {
+          const mutex = _mutex.get(this);
+          mutex.lock(async unlock => {
+            // TODO:
+            unlock();
+          });
+        } else {
+          reject(EsdbError.kernelNotLoaded());
+        }
       } else {
-        reject(EsdbError.kernelNotLoaded());
+        reject(EsdbError.invalidParams(`collection.getAll()`));
       }
+
     });
   }
   count(where) {
     return new Promise((resolve, reject) => {
-      const kernel = _kernel.get(this);
-      if (kernel) {
-        const mutex = _mutex.get(this);
-        mutex.lock(async unlock => {
-          // TODO:
-          unlock();
-        });
+      if (where instanceof EsdbQuery) {
+        const kernel = _kernel.get(this);
+        if (kernel) {
+          const mutex = _mutex.get(this);
+          mutex.lock(async unlock => {
+            // TODO:
+            unlock();
+          });
+        } else {
+          reject(EsdbError.kernelNotLoaded());
+        }
       } else {
-        reject(EsdbError.kernelNotLoaded());
+        reject(EsdbError.invalidParams(`collection.count()`));
       }
     });
   }
   insert(doc) {
     return new Promise((resolve, reject) => {
-      const kernel = _kernel.get(this);
-      if (kernel) {
-        const mutex = _mutex.get(this);
-        mutex.lock(async unlock => {
-          // TODO:
-          unlock();
-        });
+      if (typeof doc === 'object' && doc !== null && doc.hasOwnProperty(this.key)) {
+        const kernel = _kernel.get(this);
+        if (kernel) {
+          const mutex = _mutex.get(this);
+          mutex.lock(async unlock => {
+            try {
+              const item = await kernel.get(this, doc[this.key], doc);
+              if (!item) {
+                resolve(await kernel.set(this, doc[this.key], doc));
+              } else {
+                throw EsdbError.dataAlreadyExists();
+              }
+            } catch (e) {
+              reject(e);
+            } finally {
+              unlock();
+            }
+          });
+        } else {
+          reject(EsdbError.kernelNotLoaded());
+        }
       } else {
-        reject(EsdbError.kernelNotLoaded());
+        reject(EsdbError.invalidParams(`collection.insert(${doc})`));
       }
     });
   }
   upsert(doc) {
     return new Promise((resolve, reject) => {
-      const kernel = _kernel.get(this);
-      if (kernel) {
-        const mutex = _mutex.get(this);
-        mutex.lock(async unlock => {
-          try {
-            const item = await kernel.set(this, doc[this.key], doc);
-            unlock();
-            resolve(item);
-          } catch (e) {
-            unlock();
-            reject(e);
-          }
-        });
+      if (typeof doc === 'object' && doc !== null && doc.hasOwnProperty(this.key)) {
+        const kernel = _kernel.get(this);
+        if (kernel) {
+          const mutex = _mutex.get(this);
+          mutex.lock(async unlock => {
+            try {
+              resolve(await kernel.set(this, doc[this.key], doc));
+            } catch (e) {
+              reject(e);
+            } finally {
+              unlock();
+            }
+          });
+        } else {
+          reject(EsdbError.kernelNotLoaded());
+        }
       } else {
-        reject(EsdbError.kernelNotLoaded());
+        reject(EsdbError.invalidParams(`collection.upsert(${doc})`));
       }
     });
   }
   update(doc) {
     return new Promise((resolve, reject) => {
-      const kernel = _kernel.get(this);
-      if (kernel) {
-        const mutex = _mutex.get(this);
-        mutex.lock(unlock => {
-          // TODO:
-        });
+      if (typeof doc === 'object' && doc !== null && doc.hasOwnProperty(this.key)) {
+        const kernel = _kernel.get(this);
+        if (kernel) {
+          const mutex = _mutex.get(this);
+          mutex.lock(async unlock => {
+            try {
+              const item = await kernel.get(this, doc[this.key], doc);
+              if (item) {
+                resolve(await kernel.set(this, doc[this.key], doc));
+              } else {
+                throw EsdbError.dataNotFound();
+              }
+            } catch (e) {
+              reject(e);
+            } finally {
+              unlock();
+            }
+          });
+        } else {
+          reject(EsdbError.kernelNotLoaded());
+        }
       } else {
-        reject(EsdbError.kernelNotLoaded());
+        reject(EsdbError.invalidParams(`collection.update(${doc})`));
       }
     });
   }
   remove(key) {
     return new Promise((resolve, reject) => {
-      const kernel = _kernel.get(this);
-      if (kernel) {
-        const mutex = _mutex.get(this);
-        mutex.lock(unlock => {
-          try {
-            const item = await kernel.remove(this, key);
-            unlock();
-            resolve(item);
-          } catch (e) {
-            unlock();
-            reject(e);
-          }
-        });
+      if (typeof key === 'string') {
+        const kernel = _kernel.get(this);
+        if (kernel) {
+          const mutex = _mutex.get(this);
+          mutex.lock(async unlock => {
+            try {
+              resolve(await kernel.remove(this, key));
+            } catch (e) {
+              reject(e);
+            } finally {
+              unlock();
+            }
+          });
+        } else {
+          reject(EsdbError.kernelNotLoaded());
+        }
       } else {
-        reject(EsdbError.kernelNotLoaded());
+        reject(EsdbError.invalidParams(`collection.remove(${key})`));
       }
     });
   }
 
   updateIf(setter, where) {
     return new Promise((resolve, reject) => {
-      const kernel = _kernel.get(this);
-      if (kernel) {
-        const mutex = _mutex.get(this);
-        mutex.lock(unlock => {
-          // TODO:
-        });
+      if (typeof setter === 'object' && setter !== null && where instanceof EsdbQuery) {
+        const kernel = _kernel.get(this);
+        if (kernel) {
+          const mutex = _mutex.get(this);
+          mutex.lock(async unlock => {
+            // TODO:
+          });
+        } else {
+          reject(EsdbError.kernelNotLoaded());
+        }
       } else {
-        reject(EsdbError.kernelNotLoaded());
+        reject(EsdbError.invalidParams(`collection.updateIf()`));
       }
+
     });
   }
   removeIf(where) {
     return new Promise((resolve, reject) => {
-      const kernel = _kernel.get(this);
-      if (kernel) {
-        const mutex = _mutex.get(this);
-        mutex.lock(unlock => {
-          // TODO:
-        });
+      if (where instanceof EsdbQuery) {
+        const kernel = _kernel.get(this);
+        if (kernel) {
+          const mutex = _mutex.get(this);
+          mutex.lock(async unlock => {
+            // TODO:
+          });
+        } else {
+          reject(EsdbError.kernelNotLoaded());
+        }
       } else {
-        reject(EsdbError.kernelNotLoaded());
+        reject(EsdbError.invalidParams(`collection.removeIf()`));
       }
+
     });
   }
   clear() {
@@ -162,14 +221,14 @@ export default class EsdbCollection {
       const kernel = _kernel.get(this);
       if (kernel) {
         const mutex = _mutex.get(this);
-        mutex.lock(unlock => {
+        mutex.lock(async unlock => {
           try {
             await kernel.clear(this);
-            unlock();
             resolve();
           } catch (e) {
-            unlock();
             reject(e);
+          } finally {
+            unlock();
           }
         });
       } else {
