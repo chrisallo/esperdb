@@ -69,6 +69,7 @@ esdb
   .name('example.product.db')
   .version(2)
   .store(customStoreImplementsEsdbStore)
+  .config(options)
   .schema({
     // collection name
     name: 'Product',
@@ -91,24 +92,21 @@ esdb
     ],
 
     // data migration function (optional)
-    migrate: oldVersion => {
+    migrate: (oldVersion, item) => {
       return new Promise((resolve, reject) => {
+        let isDirty = true;
         switch (oldVersion) {
           case 1:
+            item.price = 0;
             break;
+          default:
+            isDirty = false;
         }
-        resolve();
+        resolve(isDirty);
       });
     }
   })
-  .build(options)
-  .then(db => {
-    // db is equivalent to `esdb`
-    // implement the logic here
-  })
-  .catch(err => {
-    // handle the error here
-  });
+  .build(options);
 ```
 
 ## Collection
@@ -170,12 +168,10 @@ You can put your own encryption algorithm into the database. On the initializati
 import customEncryption from '/your/encrypt/path';
 
 esdb
-  .version(2)
-  .store(customStoreImplementsEsdbStore)
+  ...
   .encrypt(customEncryption)
   ...
-  .build()
-  ...
+  .build();
 ```
 
 The `CustomEncryption` is an implementation of `EsdbEncryption`.

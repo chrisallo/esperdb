@@ -1,16 +1,16 @@
 import EsdbStore from './interface/store';
 import EsdbEncryption from './interface/encryption';
 
+import EsdbKernel from './kernel';
 import EsdbCollection from './collection';
 import EsdbQuery from './query';
 import EsdbError from './error';
+
 import EsdbLog from './utils/log';
 
-/// default options
-const DEFAULT_BATCH_SIZE = 64;
-const DEFAULT_BATCH_INTERVAL = 200;
-const DEFAULT_CACHE_BLOCK_LIMIT = 64;
-const DEFAULT_CACHE_BLOCK_FLUSH = 16;
+/// constants
+const ESDB_METADATA_KEY = 'esdb-metadata';
+const ESDB_COLLECTION_PREFIX = 'esdb-collection-';
 
 let _instance = null;
 let _vault = null;
@@ -24,6 +24,7 @@ class Esdb {
         store: new EsdbStore(),
         encryption: new EsdbEncryption(),
         schema: {},
+        options: {},
         collection: {},
         error: null,
         state: Esdb.State.INIT
@@ -86,6 +87,20 @@ class Esdb {
     }
     return this;
   }
+  config(val) {
+    if (!_vault.error) {
+      if (typeof val === 'object' && val) {
+        if (this.isInit) {
+          _vault.options = val;
+        } else {
+          _vault.error = EsdbError.immutableReadyState();
+        }
+      } else {
+        _vault.error = EsdbError.invalidParams(`esdb.config(${val})`);
+      }
+    }
+    return this;
+  }
   encryption(val) {
     if (!_vault.error) {
       if (val instanceof EsdbEncryption) {
@@ -123,31 +138,62 @@ class Esdb {
     }
     return this;
   }
-  build(options = {}) {
-    return new Promise((resolve, reject) => {
-      if (!_vault.error) {
-        const {
-          batchSize = DEFAULT_BATCH_SIZE,
-          batchInterval = DEFAULT_BATCH_INTERVAL,
-          cacheBlockLimit = DEFAULT_CACHE_BLOCK_LIMIT,
-          cacheBlockFlush = DEFAULT_CACHE_BLOCK_FLUSH
-        } = options;
+  async build() {
+    if (!_vault.error) {
+      try {
+        const { name, version, store, schema } = _vault;
+        await store.init();
 
-        const createCollectionOperations = [];
-        for (let name in _vault.schema) {
-          if (!_vault.collections[name]) {
-            const key = _vault.schema[name].key || 'id';
-            const col = (_vault.collections[name] = new EsdbCollection({ name, key }));
-            createCollectionOperations.push(col._init());
-          }
+        let metadata = await store.getItem(ESDB_METADATA_KEY);
+        let oldVersion = null;
+        let versionUpgraded = false;
+        if (metadata && metadata.version !== version) {
+          oldVersion = metadata.version;
+          versionUpgraded = true;
         }
 
-        // TODO:
-      } else {
-        EsdbLog.error(_vault.error.message);
-        reject(_vault.error);
+        const kernel = new EsdbKernel({
+          name,
+          store,
+          encryption: _vault.encryption,
+          options: _vault.options
+        });
+        for (let name in schema) {
+          const collectionStoreKey = `${ESDB_COLLECTION_PREFIX}${name}`;
+          const { model, key, indexes, migrate } = schema[name];
+
+          const collection = new EsdbCollection({ name, key, kernel });
+          const collectionInfo = await store.getItem(collectionStoreKey);
+          if (collectionInfo) {
+            if (versionUpgraded) {
+              if (migrate) {
+                const data = await collection.getAll();
+                for (let i in data) {
+                  const isDirty = await migrate(oldVersion, data[i]);
+                  if (isDirty) {
+                    await collection.update(data[i]);
+                  }
+                }
+              }
+
+              // TODO: check if indexes has changed and upgrade indexes here
+
+              if (key !== collectionInfo.key) {
+                // TODO: upgrade the key here
+              }
+            }
+          }
+          await store.setItem(collectionStoreKey, { model, key, indexes });
+          _vault.collection[name] = collection;
+        }
+        // set metadata
+        await store.setItem(ESDB_METADATA_KEY, JSON.stringify({ name, version, schema }));
+      } catch (e) {
+        EsdbLog.error(e.message);
       }
-    });
+    } else {
+      EsdbLog.error(_vault.error.message);
+    }
   }
   collection(name) {
     let col = null;

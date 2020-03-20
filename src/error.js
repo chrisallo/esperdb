@@ -10,6 +10,9 @@ export default class EsdbError extends Error {
   static databaseNotReady() {
     return new EsdbError(`Database is not ready.`, 700011);
   }
+  static kernelNotLoaded() {
+    return new EsdbError(`Database kernel is not loaded.`, 700012);
+  }
   static invalidParams(element = 'unknown') {
     return new EsdbError(`Invalid parameters: ${element}`, 703000);
   }
