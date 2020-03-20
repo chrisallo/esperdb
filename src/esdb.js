@@ -1,7 +1,9 @@
 import EsdbStore from './interface/store';
 import EsdbEncryption from './interface/encryption';
 
-import EsdbKernel from './kernel';
+import EsdbKernel from './kernel/kernel';
+import EsdbIndexer from './kernel/indexer';
+
 import EsdbCollection from './collection';
 import EsdbQuery from './query';
 import EsdbError from './error';
@@ -162,8 +164,26 @@ class Esdb {
           const collectionStoreKey = `${ESDB_COLLECTION_PREFIX}${name}`;
           const { model, key, indexes, migrate } = schema[name];
 
-          const collection = new EsdbCollection({ name, key, kernel });
+          /// create index for primary key
+          let hasDefaultIndex = false;
+          for (let i in indexes) {
+            const index = indexes[i];
+            if (index.length === 1 && index[0] === key) {
+              hasDefaultIndex = true;
+              break;
+            }
+          }
+          if (!hasDefaultIndex) {
+            indexes.unshift([key]);
+          }
+
           const collectionInfo = await store.getItem(collectionStoreKey);
+          const indexer = new EsdbIndexer({
+            collectionName: name,
+            kernel,
+            indexes: collectionInfo ? collectionInfo.indexes : indexes
+          });
+          const collection = new EsdbCollection({ name, key, model, indexer, kernel });
           if (collectionInfo) {
             if (versionUpgraded) {
               if (migrate) {
@@ -175,12 +195,7 @@ class Esdb {
                   }
                 }
               }
-
-              // TODO: check if indexes has changed and upgrade indexes here
-
-              if (key !== collectionInfo.key) {
-                // TODO: upgrade the key here
-              }
+              await indexer.replace(indexes);
             }
           }
           await store.setItem(collectionStoreKey, { model, key, indexes });

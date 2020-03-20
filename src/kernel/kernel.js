@@ -20,22 +20,37 @@ export default class EsdbKernel {
       batchInterval: options.batchInterval || DEFAULT_BATCH_INTERVAL
     };
   }
-  get(collection, key) {
+  get(collectionName, key) { // object
     return new Promise((resolve, reject) => {
       // TODO:
     });
   }
-  set(collection, key, item) {
+  getAll(collectionName) { // array<{ key: string, value: object }>
     return new Promise((resolve, reject) => {
       // TODO:
     });
   }
-  remove(collection, key) {
+  each(collectionName, iterator) {
     return new Promise((resolve, reject) => {
       // TODO:
     });
   }
-  clear(collection) {
+  count(collectionName) { // number
+    return new Promise((resolve, reject) => {
+      // TODO:
+    });
+  }
+  set(collectionName, key, item) { // object
+    return new Promise((resolve, reject) => {
+      // TODO:
+    });
+  }
+  remove(collectionName, key) { // object
+    return new Promise((resolve, reject) => {
+      // TODO:
+    });
+  }
+  clear(collectionName) { // void
     return new Promise((resolve, reject) => {
       // TODO:
     });

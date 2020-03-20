@@ -201,6 +201,11 @@ export default class EsdbQuery {
       WHERE: '/where'
     };
   }
+  getRelatedColumns() {
+    const columns = [];
+    // TODO:
+    return columns;
+  }
   match(item) {
     return _match(item, this.conditions);
   }

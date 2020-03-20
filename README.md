@@ -88,7 +88,7 @@ esdb
     // indexes (optional)
     indexes: [
       ['name', 'price'],
-      ['createdAt']
+      ['--createdAt'] // double-negative means the reversed index
     ],
 
     // data migration function (optional)
@@ -148,13 +148,15 @@ const getCheapProducts = () => {
   return new Promise(async resolve => {
     // create new query
     const query = new EsdbQuery({
-      'price': { '<=': 2 }
+      price: { '<=': 2 }
     });
-    query.offset = 0; // specify the offset
-    query.limit = 20; // specify the limit
 
     const col = esdb.collection('Product');
-    const cheapProducts = await col.getAll(query);
+    const cheapProducts = await col.getAll(query, {
+      offset: 0,
+      limit: 20,
+      orderBy: '--createdAt'
+    });
     resolve(cheapProducts);
   });
 };
