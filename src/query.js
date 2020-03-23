@@ -203,7 +203,16 @@ export default class EsdbQuery {
   }
   getRelatedColumns() {
     const columns = [];
-    // TODO:
+    for (let key in this.conditions) {
+      if ([EsdbQuery.Command.AND, EsdbQuery.Command.OR].indexOf(key)) {
+        if (Array.isArray(this.conditions[key])) {
+          const stack = [];
+          // TODO:
+        }
+      } else {
+        columns.push(key);
+      }
+    }
     return columns;
   }
   match(item) {

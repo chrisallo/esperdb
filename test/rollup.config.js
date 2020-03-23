@@ -1,23 +1,16 @@
-import progress from 'rollup-plugin-progress';
-import filesize from 'rollup-plugin-filesize';
-
-import banner from 'rollup-plugin-banner';
 import babel from 'rollup-plugin-babel';
 import resolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
-import json from 'rollup-plugin-json';
-import { eslint } from 'rollup-plugin-eslint';
-import { uglify } from 'rollup-plugin-uglify';
 
 export default [
   {
-    input: './src/esdb.js',
+    input: './test/index.js',
     output: {
-      file: 'esdb.min.js',
+      file: 'esdb.test.js',
       name: 'esdb',
       format: 'umd',
       exports: 'named',
-      compact: true
+      compact: false
     },
     onwarn: (warning, next) => {
       if (warning.code === 'CIRCULAR_DEPENDENCY') {
@@ -26,8 +19,6 @@ export default [
       next(warning);
     },
     plugins: [
-      progress(),
-      eslint(),
       babel({
         exclude: 'node_modules/**',
         presets: [
@@ -48,11 +39,7 @@ export default [
         runtimeHelpers: true
       }),
       resolve(),
-      commonjs(),
-      uglify(),
-      json(),
-      filesize(),
-      banner('esdb v<%= pkg.version %>')
+      commonjs()
     ],
     external: []
   }

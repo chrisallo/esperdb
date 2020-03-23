@@ -24,7 +24,7 @@ To build the source code, simply do
 ~$ npm run build
 ```
 
-An automated test is ready for the stability of `esdb` which is written in `jest`.
+An automated test is ready for the stability of `esdb` which is written in `mocha`.
 
 ```
 ~$ npm run test
