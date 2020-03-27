@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8" />
+  <title>esdb web tester</title>
+</head>
+
+<body>
+  <script src='./kernel/btree.js'></script>
+  <script>
+    const count = 1000;
+    const removeCount = 800;
+    const range = 100000;
+
+    /// init add testset
+    const data = [];
+    for (let i = 0; i < count; i++) {
+      const n = parseInt(range * Math.random()) % range;
+      data.push(n);
+    }
+    console.log('data', data);
+
+    /// init btree
+    const bt = new Btree({ order: 50 });
+
+    /// add
+    for (let i in data) {
+      bt.add(data[i]);
+    }
+
+    /// iterate
+    const list = [];
+    bt.iterate((n, i) => {
+      list.push(n);
+    });
+    console.log('list', bt.count, list);
+
+    // bt.prettyprint();
+
+    /// init remove testset
+    const removes = [...data];
+    for (let i = 0; i < data.length - removeCount; i++) {
+      const index = parseInt(range * Math.random()) % removes.length;
+      removes.splice(index, 1);
+    }
+    removes.sort(() => Math.random() - 0.5);
+    console.log('removes', removes);
+
+    /// remove
+    for (let i in removes) {
+      bt.remove(removes[i]);
+      // console.log('remove', removes[i]);
+      // bt.prettyprint();
+    }
+
+    /// iterate after remove
+    const listAfterRemove = [];
+    bt.iterate((n, i) => {
+      listAfterRemove.push(n);
+    });
+    console.log('listAfterRemove', bt.count, listAfterRemove);
+    // bt.prettyprint();
+    console.log(`total ${list.length} - removes ${removes.length} = result ${listAfterRemove.length}`);
+  </script>
+</body>
+
+</html>
