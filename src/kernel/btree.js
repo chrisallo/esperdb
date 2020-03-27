@@ -159,8 +159,16 @@ class BtreeNode {
         }
       }
     } else {
-      this.values = [...this.children[0].values];
-      this.children = [...this.children[0].children];
+      this.values = [
+        ...this.children
+          .map(c => c ? c.values : [])
+          .reduce((a, c) => a.concat(c), [])
+      ];
+      this.children = [
+        ...this.children
+          .map(c => c ? c.children : [])
+          .reduce((a, c) => a.concat(c), [])
+      ];
       this.children.forEach(c => { if (c) c.parent = this; });
     }
   }

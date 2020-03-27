@@ -9,9 +9,9 @@
 <body>
   <script src='./kernel/btree.js'></script>
   <script>
-    const count = 1000;
-    const removeCount = 800;
-    const range = 100000;
+    const count = 100000;
+    const removeCount = 80000;
+    const range = 10000000;
 
     /// init add testset
     const data = [];
@@ -19,22 +19,25 @@
       const n = parseInt(range * Math.random()) % range;
       data.push(n);
     }
-    console.log('data', data);
 
     /// init btree
     const bt = new Btree({ order: 50 });
 
     /// add
+    let tsmp = new Date().getTime();
     for (let i in data) {
       bt.add(data[i]);
     }
+    console.log(`add ${new Date().getTime() - tsmp}ms`);
 
     /// iterate
+    tsmp = new Date().getTime();
     const list = [];
     bt.iterate((n, i) => {
       list.push(n);
     });
-    console.log('list', bt.count, list);
+    console.log(`iterate ${new Date().getTime() - tsmp}ms`);
+    // console.log('list', bt.count, list);
 
     // bt.prettyprint();
 
@@ -45,23 +48,25 @@
       removes.splice(index, 1);
     }
     removes.sort(() => Math.random() - 0.5);
-    console.log('removes', removes);
+    // console.log('removes', removes);
 
     /// remove
+    tsmp = new Date().getTime();
+    let actuallyRemoved = 0;
     for (let i in removes) {
-      bt.remove(removes[i]);
-      // console.log('remove', removes[i]);
-      // bt.prettyprint();
+      if (bt.remove(removes[i]))
+        actuallyRemoved++;
     }
+    console.log(`remove ${new Date().getTime() - tsmp}ms`);
 
     /// iterate after remove
     const listAfterRemove = [];
     bt.iterate((n, i) => {
       listAfterRemove.push(n);
     });
-    console.log('listAfterRemove', bt.count, listAfterRemove);
+    // console.log('listAfterRemove', bt.count, listAfterRemove);
     // bt.prettyprint();
-    console.log(`total ${list.length} - removes ${removes.length} = result ${listAfterRemove.length}`);
+    console.log(`total ${list.length} - removes ${actuallyRemoved} = result ${list.length - actuallyRemoved} (${listAfterRemove.length})`);
   </script>
 </body>
 
