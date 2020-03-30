@@ -1,5 +1,5 @@
 
-export default class EsdbEncryption {
+export default class EsperEncryption {
   encrypt(doc) {
     return JSON.stringify(doc);
   }

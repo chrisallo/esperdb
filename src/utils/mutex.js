@@ -1,5 +1,5 @@
 
-export default class EsdbMutex {
+export default class EsperMutex {
   constructor() {
     this.queue = [];
     this.locked = false;

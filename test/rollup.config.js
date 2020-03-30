@@ -6,8 +6,8 @@ export default [
   {
     input: './test/index.js',
     output: {
-      file: 'esdb.test.js',
-      name: 'esdb',
+      file: 'esperdb.test.js',
+      name: 'esperdb',
       format: 'umd',
       exports: 'named',
       compact: false

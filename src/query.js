@@ -1,10 +1,10 @@
-import EsdbLog from "./utils/log";
-import { EsdbError } from "./esdb";
+import EsperLog from "./utils/log";
+import { EsperError } from "./esper";
 
 const _match = (item, conditions) => {
   try {
     for (let key in conditions) {
-      if (key === EsdbQuery.Command.AND) {
+      if (key === EsperQuery.Command.AND) {
         if (Array.isArray(conditions[key])) {
           for (let i in conditions[key]) {
             if (!_match(item, conditions[key][i])) {
@@ -12,9 +12,9 @@ const _match = (item, conditions) => {
             }
           }
         } else {
-          throw EsdbError.invalidParams(`Query syntax error with ${key}`);
+          throw EsperError.invalidParams(`Query syntax error with ${key}`);
         }
-      } else if (key === EsdbQuery.Command.OR) {
+      } else if (key === EsperQuery.Command.OR) {
         if (Array.isArray(conditions[key])) {
           let count = 0;
           for (let i in conditions[key]) {
@@ -24,7 +24,7 @@ const _match = (item, conditions) => {
           }
           if (count === 0) return false;
         } else {
-          throw EsdbError.invalidParams(`Query syntax error with ${key}`);
+          throw EsperError.invalidParams(`Query syntax error with ${key}`);
         }
       } else {
         const filter = conditions[key];
@@ -32,7 +32,7 @@ const _match = (item, conditions) => {
           // command
           for (let op in filter) {
             switch (op) {
-              case EsdbQuery.Command.GT: {
+              case EsperQuery.Command.GT: {
                 if (typeof item[key] === 'number') {
                   if (!(item[key] > filter[op])) {
                     return false;
@@ -46,7 +46,7 @@ const _match = (item, conditions) => {
                 }
                 break;
               }
-              case EsdbQuery.Command.GTE: {
+              case EsperQuery.Command.GTE: {
                 if (typeof item[key] === 'number') {
                   if (!(item[key] >= filter[op])) {
                     return false;
@@ -60,7 +60,7 @@ const _match = (item, conditions) => {
                 }
                 break;
               }
-              case EsdbQuery.Command.LT: {
+              case EsperQuery.Command.LT: {
                 if (typeof item[key] === 'number') {
                   if (!(item[key] < filter[op])) {
                     return false;
@@ -74,7 +74,7 @@ const _match = (item, conditions) => {
                 }
                 break;
               }
-              case EsdbQuery.Command.LTE: {
+              case EsperQuery.Command.LTE: {
                 if (typeof item[key] === 'number') {
                   if (!(item[key] <= filter[op])) {
                     return false;
@@ -88,75 +88,75 @@ const _match = (item, conditions) => {
                 }
                 break;
               }
-              case EsdbQuery.Command.EQ: {
+              case EsperQuery.Command.EQ: {
                 if (!(item[key] === filter[op])) {
                   return false;
                 }
                 break;
               }
-              case EsdbQuery.Command.NEQ: {
+              case EsperQuery.Command.NEQ: {
                 if (!(item[key] !== filter[op])) {
                   return false;
                 }
                 break;
               }
-              case EsdbQuery.Command.IN: {
+              case EsperQuery.Command.IN: {
                 if (Array.isArray(filter[op])) {
                   if (!(filter[op].indexOf(item[key]) >= 0)) {
                     return false;
                   }
                 } else {
-                  throw EsdbError.invalidParams(`Query syntax error with ${key}`);
+                  throw EsperError.invalidParams(`Query syntax error with ${key}`);
                 }
                 break;
               }
-              case EsdbQuery.Command.NOT_IN: {
+              case EsperQuery.Command.NOT_IN: {
                 if (Array.isArray(filter[op])) {
                   if (!(filter[op].indexOf(item[key]) < 0)) {
                     return false;
                   }
                 } else {
-                  throw EsdbError.invalidParams(`Query syntax error with ${key}`);
+                  throw EsperError.invalidParams(`Query syntax error with ${key}`);
                 }
                 break;
               }
-              case EsdbQuery.Command.LIKE: {
+              case EsperQuery.Command.LIKE: {
                 if (typeof filter[op] === 'string') {
                   if (!(filter[op].indexOf(item[key]) >= 0)) {
                     return false;
                   }
                 } else {
-                  throw EsdbError.invalidParams(`Query syntax error with ${key}`);
+                  throw EsperError.invalidParams(`Query syntax error with ${key}`);
                 }
                 break;
               }
-              case EsdbQuery.Command.NOT_LIKE: {
+              case EsperQuery.Command.NOT_LIKE: {
                 if (typeof filter[op] === 'string') {
                   if (!(filter[op].indexOf(item[key]) < 0)) {
                     return false;
                   }
                 } else {
-                  throw EsdbError.invalidParams(`Query syntax error with ${key}`);
+                  throw EsperError.invalidParams(`Query syntax error with ${key}`);
                 }
                 break;
               }
-              case EsdbQuery.Command.REGEX: {
+              case EsperQuery.Command.REGEX: {
                 if (filter[op] instanceof RegExp) {
                   if (!filter[op].test(item[key])) {
                     return false;
                   }
                 } else {
-                  throw EsdbError.invalidParams(`Query syntax error with ${key}`);
+                  throw EsperError.invalidParams(`Query syntax error with ${key}`);
                 }
                 break;
               }
-              case EsdbQuery.Command.WHERE: {
+              case EsperQuery.Command.WHERE: {
                 if (typeof filter[op] === 'function') {
                   if (!filter[op](item[key])) {
                     return false;
                   }
                 } else {
-                  throw EsdbError.invalidParams(`Query syntax error with ${key}`);
+                  throw EsperError.invalidParams(`Query syntax error with ${key}`);
                 }
                 break;
               }
@@ -174,12 +174,12 @@ const _match = (item, conditions) => {
     }
     return true;
   } catch (err) {
-    EsdbLog.error(err.message);
+    EsperLog.error(err.message);
     return false;
   }
 };
 
-export default class EsdbQuery {
+export default class EsperQuery {
   constructor(cond) {
     this.conditions = cond;
   }
@@ -204,7 +204,7 @@ export default class EsdbQuery {
   getRelatedColumns() {
     const columns = [];
     for (let key in this.conditions) {
-      if ([EsdbQuery.Command.AND, EsdbQuery.Command.OR].indexOf(key)) {
+      if ([EsperQuery.Command.AND, EsperQuery.Command.OR].indexOf(key)) {
         if (Array.isArray(this.conditions[key])) {
           const stack = [];
           // TODO:

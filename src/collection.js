@@ -1,11 +1,11 @@
-import EsdbQuery from "./query";
-import EsdbError from "./error";
-import EsdbMutex from "./utils/mutex";
+import EsperQuery from "./query";
+import EsperError from "./error";
+import EsperMutex from "./utils/mutex";
 import { clone } from "./utils/clone";
 
 const _privateProps = new WeakMap();
 
-export default class EsdbCollection {
+export default class EsperCollection {
   constructor({
     name = '',
     key = '',
@@ -19,7 +19,7 @@ export default class EsdbCollection {
       model,
       indexer,
       kernel,
-      mutex: new EsdbMutex()
+      mutex: new EsperMutex()
     });
   }
   get name() {
@@ -53,16 +53,16 @@ export default class EsdbCollection {
             }
           });
         } else {
-          reject(EsdbError.kernelNotLoaded());
+          reject(EsperError.kernelNotLoaded());
         }
       } else {
-        reject(EsdbError.invalidParams(`collection.get(${key})`));
+        reject(EsperError.invalidParams(`collection.get(${key})`));
       }
     });
   }
   getAll(where, options = {}) {
     return new Promise((resolve, reject) => {
-      if ((where instanceof EsdbQuery || where === null) && typeof options === 'object') {
+      if ((where instanceof EsperQuery || where === null) && typeof options === 'object') {
         const { kernel, indexer, mutex } = _privateProps.get(this);
         if (kernel) {
           mutex.lock(async unlock => {
@@ -97,17 +97,17 @@ export default class EsdbCollection {
             }
           });
         } else {
-          reject(EsdbError.kernelNotLoaded());
+          reject(EsperError.kernelNotLoaded());
         }
       } else {
-        reject(EsdbError.invalidParams(`collection.getAll()`));
+        reject(EsperError.invalidParams(`collection.getAll()`));
       }
 
     });
   }
   count(where) {
     return new Promise((resolve, reject) => {
-      if (where instanceof EsdbQuery) {
+      if (where instanceof EsperQuery) {
         const { kernel, mutex } = _privateProps.get(this);
         if (kernel) {
           mutex.lock(async unlock => {
@@ -130,10 +130,10 @@ export default class EsdbCollection {
             }
           });
         } else {
-          reject(EsdbError.kernelNotLoaded());
+          reject(EsperError.kernelNotLoaded());
         }
       } else {
-        reject(EsdbError.invalidParams(`collection.count()`));
+        reject(EsperError.invalidParams(`collection.count()`));
       }
     });
   }
@@ -148,7 +148,7 @@ export default class EsdbCollection {
               if (!item) {
                 resolve(await kernel.set(this.name, doc[this.key], doc));
               } else {
-                throw EsdbError.dataAlreadyExists();
+                throw EsperError.dataAlreadyExists();
               }
             } catch (e) {
               reject(e);
@@ -157,10 +157,10 @@ export default class EsdbCollection {
             }
           });
         } else {
-          reject(EsdbError.kernelNotLoaded());
+          reject(EsperError.kernelNotLoaded());
         }
       } else {
-        reject(EsdbError.invalidParams(`collection.insert(${doc})`));
+        reject(EsperError.invalidParams(`collection.insert(${doc})`));
       }
     });
   }
@@ -179,10 +179,10 @@ export default class EsdbCollection {
             }
           });
         } else {
-          reject(EsdbError.kernelNotLoaded());
+          reject(EsperError.kernelNotLoaded());
         }
       } else {
-        reject(EsdbError.invalidParams(`collection.upsert(${doc})`));
+        reject(EsperError.invalidParams(`collection.upsert(${doc})`));
       }
     });
   }
@@ -197,7 +197,7 @@ export default class EsdbCollection {
               if (item) {
                 resolve(await kernel.set(this.name, doc[this.key], doc));
               } else {
-                throw EsdbError.dataNotFound();
+                throw EsperError.dataNotFound();
               }
             } catch (e) {
               reject(e);
@@ -206,10 +206,10 @@ export default class EsdbCollection {
             }
           });
         } else {
-          reject(EsdbError.kernelNotLoaded());
+          reject(EsperError.kernelNotLoaded());
         }
       } else {
-        reject(EsdbError.invalidParams(`collection.update(${doc})`));
+        reject(EsperError.invalidParams(`collection.update(${doc})`));
       }
     });
   }
@@ -228,16 +228,16 @@ export default class EsdbCollection {
             }
           });
         } else {
-          reject(EsdbError.kernelNotLoaded());
+          reject(EsperError.kernelNotLoaded());
         }
       } else {
-        reject(EsdbError.invalidParams(`collection.remove(${key})`));
+        reject(EsperError.invalidParams(`collection.remove(${key})`));
       }
     });
   }
   updateIf(setter, where) {
     return new Promise((resolve, reject) => {
-      if (typeof setter === 'object' && setter !== null && where instanceof EsdbQuery) {
+      if (typeof setter === 'object' && setter !== null && where instanceof EsperQuery) {
         const { kernel, mutex } = _privateProps.get(this);
         if (kernel) {
           mutex.lock(async unlock => {
@@ -260,17 +260,17 @@ export default class EsdbCollection {
             }
           });
         } else {
-          reject(EsdbError.kernelNotLoaded());
+          reject(EsperError.kernelNotLoaded());
         }
       } else {
-        reject(EsdbError.invalidParams(`collection.updateIf()`));
+        reject(EsperError.invalidParams(`collection.updateIf()`));
       }
 
     });
   }
   removeIf(where) {
     return new Promise((resolve, reject) => {
-      if (where instanceof EsdbQuery) {
+      if (where instanceof EsperQuery) {
         const { kernel, mutex } = _privateProps.get(this);
         if (kernel) {
           mutex.lock(async unlock => {
@@ -290,10 +290,10 @@ export default class EsdbCollection {
             }
           });
         } else {
-          reject(EsdbError.kernelNotLoaded());
+          reject(EsperError.kernelNotLoaded());
         }
       } else {
-        reject(EsdbError.invalidParams(`collection.removeIf()`));
+        reject(EsperError.invalidParams(`collection.removeIf()`));
       }
 
     });
@@ -313,7 +313,7 @@ export default class EsdbCollection {
           }
         });
       } else {
-        reject(EsdbError.kernelNotLoaded());
+        reject(EsperError.kernelNotLoaded());
       }
     });
   }

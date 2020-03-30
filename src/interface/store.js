@@ -3,7 +3,7 @@ const DEFAULT_MOCK_DELAY = 20;
 
 let _memoryCache = {};
 
-export default class EsdbStore {
+export default class EsperStore {
   constructor(mockDelay = DEFAULT_MOCK_DELAY) {
     this.mockDelay = mockDelay;
   }

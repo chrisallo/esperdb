@@ -1,6 +1,6 @@
-import EsdbQuery from "../query";
+import EsperQuery from "../query";
 
-export default class EsdbIndexer {
+export default class EsperIndexer {
   constructor({
     collectionName = '',
     kernel = null,
@@ -17,7 +17,7 @@ export default class EsdbIndexer {
     return key.split('>');
   }
   findBestIndexForQuery(query, options = {}) {
-    if (query instanceof EsdbQuery && typeof options === 'object' && options !== null) {
+    if (query instanceof EsperQuery && typeof options === 'object' && options !== null) {
       const relatedColumns = query.getRelatedColumns();
       let candidates = [];
       for (let i in this.indexes) {

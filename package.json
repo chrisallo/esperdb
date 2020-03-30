@@ -1,8 +1,8 @@
 {
-  "name": "esdb",
+  "name": "esperdb",
   "version": "0.1.0",
   "description": "A document database wrapper for JavaScript.",
-  "main": "esdb.min.js",
+  "main": "esperdb.min.js",
   "scripts": {
     "build": "rollup -c",
     "test": "./node_modules/.bin/rollup --config ./test/rollup.config.js && ./node_modules/.bin/karma start ./test/karma.local.conf.js --debug",
@@ -10,15 +10,15 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/chrisallo/esdb.git"
+    "url": "git+https://github.com/chrisallo/esperdb.git"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/chrisallo/esdb/issues"
+    "url": "https://github.com/chrisallo/esperdb/issues"
   },
-  "homepage": "https://github.com/chrisallo/esdb#readme",
+  "homepage": "https://github.com/chrisallo/esperdb#readme",
   "devDependencies": {
     "@babel/core": "^7.9.0",
     "@babel/plugin-transform-runtime": "^7.9.0",

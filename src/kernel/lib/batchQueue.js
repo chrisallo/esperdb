@@ -1,4 +1,4 @@
 
-export default class EsdbBatchQueue {
+export default class EsperBatchQueue {
   constructor() { }
 }

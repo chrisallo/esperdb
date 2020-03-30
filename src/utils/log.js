@@ -1,5 +1,5 @@
 
-export default class EsdbLog {
+export default class EsperLog {
   static log(...messages) {
     // eslint-disable-next-line no-console
     console.log(...messages);

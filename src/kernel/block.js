@@ -1,5 +1,5 @@
 
-export default class EsdbBlock {
+export default class EsperBlock {
   constructor(blockKey, serializedData = null) {
     this.key = blockKey;
     this.data = serializedData ? JSON.parse(serializedData) : {};

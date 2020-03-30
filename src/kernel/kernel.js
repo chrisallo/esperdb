@@ -4,7 +4,7 @@ const DEFAULT_BLOCK_SIZE = 64;
 const DEFAULT_BATCH_SIZE = 128;
 const DEFAULT_BATCH_INTERVAL = 200;
 
-export default class EsdbKernel {
+export default class EsperKernel {
   constructor({
     name = '',
     store = null,

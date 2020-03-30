@@ -1,35 +1,35 @@
-import EsdbStore from './interface/store';
-import EsdbEncryption from './interface/encryption';
+import EsperStore from './interface/store';
+import EsperEncryption from './interface/encryption';
 
-import EsdbKernel from './kernel/kernel';
-import EsdbIndexer from './kernel/indexer';
+import EsperKernel from './kernel/kernel';
+import EsperIndexer from './kernel/indexer';
 
-import EsdbCollection from './collection';
-import EsdbQuery from './query';
-import EsdbError from './error';
+import EsperCollection from './collection';
+import EsperQuery from './query';
+import EsperError from './error';
 
-import EsdbLog from './utils/log';
+import EsperLog from './utils/log';
 
 /// constants
-const ESDB_METADATA_KEY = 'esdb-metadata';
-const ESDB_COLLECTION_PREFIX = 'esdb-collection-';
+const ESDB_METADATA_KEY = 'esper-metadata';
+const ESDB_COLLECTION_PREFIX = 'esper-collection-';
 
 let _instance = null;
 let _vault = null;
 
-class Esdb {
+class Esper {
   constructor() {
     if (!_instance) {
       _vault = {
         name: '',
         version: 1,
-        store: new EsdbStore(),
-        encryption: new EsdbEncryption(),
+        store: new EsperStore(),
+        encryption: new EsperEncryption(),
         schema: {},
         options: {},
         collection: {},
         error: null,
-        state: Esdb.State.INIT
+        state: Esper.State.INIT
       };
       _instance = this;
     }
@@ -42,10 +42,10 @@ class Esdb {
     };
   }
   get isInit() {
-    return _vault.state === Esdb.State.INIT;
+    return _vault.state === Esper.State.INIT;
   }
   get isReady() {
-    return _vault.state === Esdb.State.READY;
+    return _vault.state === Esper.State.READY;
   }
   name(val) {
     if (!_vault.error) {
@@ -53,10 +53,10 @@ class Esdb {
         if (this.isInit) {
           _vault.name = val;
         } else {
-          _vault.error = EsdbError.immutableReadyState();
+          _vault.error = EsperError.immutableReadyState();
         }
       } else {
-        _vault.error = EsdbError.invalidParams(`esdb.name(${val})`);
+        _vault.error = EsperError.invalidParams(`esper.name(${val})`);
       }
     }
     return this;
@@ -67,24 +67,24 @@ class Esdb {
         if (this.isInit) {
           _vault.version = val;
         } else {
-          _vault.error = EsdbError.immutableReadyState();
+          _vault.error = EsperError.immutableReadyState();
         }
       } else {
-        _vault.error = EsdbError.invalidParams(`esdb.version(${val})`);
+        _vault.error = EsperError.invalidParams(`esper.version(${val})`);
       }
     }
     return this;
   }
   store(val) {
     if (!_vault.error) {
-      if (val instanceof EsdbStore) {
+      if (val instanceof EsperStore) {
         if (this.isInit) {
           _vault.store = val;
         } else {
-          _vault.error = EsdbError.immutableReadyState();
+          _vault.error = EsperError.immutableReadyState();
         }
       } else {
-        _vault.error = EsdbError.invalidParams(`esdb.store(${val})`);
+        _vault.error = EsperError.invalidParams(`esper.store(${val})`);
       }
     }
     return this;
@@ -95,24 +95,24 @@ class Esdb {
         if (this.isInit) {
           _vault.options = val;
         } else {
-          _vault.error = EsdbError.immutableReadyState();
+          _vault.error = EsperError.immutableReadyState();
         }
       } else {
-        _vault.error = EsdbError.invalidParams(`esdb.config(${val})`);
+        _vault.error = EsperError.invalidParams(`esper.config(${val})`);
       }
     }
     return this;
   }
   encryption(val) {
     if (!_vault.error) {
-      if (val instanceof EsdbEncryption) {
+      if (val instanceof EsperEncryption) {
         if (this.isInit) {
           _vault.encryption = val;
         } else {
-          _vault.error = EsdbError.immutableReadyState();
+          _vault.error = EsperError.immutableReadyState();
         }
       } else {
-        _vault.error = EsdbError.invalidParams(`esdb.encryption(${val})`);
+        _vault.error = EsperError.invalidParams(`esper.encryption(${val})`);
       }
     }
     return this;
@@ -132,10 +132,10 @@ class Esdb {
         if (this.isInit) {
           _vault.schema[name] = { model, key, indexes, migrate };
         } else {
-          _vault.error = EsdbError.immutableReadyState();
+          _vault.error = EsperError.immutableReadyState();
         }
       } else {
-        _vault.error = EsdbError.invalidParams(`esdb.schema(${val})`);
+        _vault.error = EsperError.invalidParams(`esper.schema(${val})`);
       }
     }
     return this;
@@ -154,7 +154,7 @@ class Esdb {
           versionUpgraded = true;
         }
 
-        const kernel = new EsdbKernel({
+        const kernel = new EsperKernel({
           name,
           store,
           encryption: _vault.encryption,
@@ -178,12 +178,12 @@ class Esdb {
           }
 
           const collectionInfo = await store.getItem(collectionStoreKey);
-          const indexer = new EsdbIndexer({
+          const indexer = new EsperIndexer({
             collectionName: name,
             kernel,
             indexes: collectionInfo ? collectionInfo.indexes : indexes
           });
-          const collection = new EsdbCollection({ name, key, model, indexer, kernel });
+          const collection = new EsperCollection({ name, key, model, indexer, kernel });
           if (collectionInfo) {
             if (versionUpgraded) {
               if (migrate) {
@@ -204,10 +204,10 @@ class Esdb {
         // set metadata
         await store.setItem(ESDB_METADATA_KEY, JSON.stringify({ name, version, schema }));
       } catch (e) {
-        EsdbLog.error(e.message);
+        EsperLog.error(e.message);
       }
     } else {
-      EsdbLog.error(_vault.error.message);
+      EsperLog.error(_vault.error.message);
     }
   }
   collection(name) {
@@ -216,13 +216,13 @@ class Esdb {
       if (this.isReady) {
         if (typeof name === 'string'
           && _vault.collection.hasOwnProperty(name)
-          && _vault.collection[name] instanceof EsdbCollection) {
+          && _vault.collection[name] instanceof EsperCollection) {
           col = _vault.collection[name];
         } else {
-          EsdbLog.error(EsdbError.invalidParams(`esdb.collection(${name})`));
+          EsperLog.error(EsperError.invalidParams(`esper.collection(${name})`));
         }
       } else {
-        EsdbLog.error(EsdbError.databaseNotReady());
+        EsperLog.error(EsperError.databaseNotReady());
       }
     }
     return col;
@@ -230,9 +230,9 @@ class Esdb {
 }
 
 export {
-  EsdbQuery,
-  EsdbError,
-  EsdbStore,
-  EsdbEncryption
+  EsperQuery,
+  EsperError,
+  EsperStore,
+  EsperEncryption
 };
-export default new Esdb();
+export default new Esper();

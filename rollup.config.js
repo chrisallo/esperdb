@@ -11,10 +11,10 @@ import { uglify } from 'rollup-plugin-uglify';
 
 export default [
   {
-    input: './src/esdb.js',
+    input: './src/esperdb.js',
     output: {
-      file: 'esdb.min.js',
-      name: 'esdb',
+      file: 'esperdb.min.js',
+      name: 'esperdb',
       format: 'umd',
       exports: 'named',
       compact: true
@@ -52,7 +52,7 @@ export default [
       uglify(),
       json(),
       filesize(),
-      banner('esdb v<%= pkg.version %>')
+      banner('esperdb v<%= pkg.version %>')
     ],
     external: []
   }
