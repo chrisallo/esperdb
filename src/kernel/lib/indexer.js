@@ -1,4 +1,3 @@
-import EsperQuery from "../query";
 
 export default class EsperIndexer {
   constructor({
@@ -17,7 +16,7 @@ export default class EsperIndexer {
     return key.split('>');
   }
   findBestIndexForQuery(query, options = {}) {
-    if (query instanceof EsperQuery && typeof options === 'object' && options !== null) {
+    if (typeof options === 'object' && options !== null) {
       const relatedColumns = query.getRelatedColumns();
       let candidates = [];
       for (let i in this.indexes) {

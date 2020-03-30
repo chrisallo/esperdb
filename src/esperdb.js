@@ -11,8 +11,8 @@ import EsperError from './error';
 import EsperLog from './utils/log';
 
 /// constants
-const ESDB_METADATA_KEY = 'esper-metadata';
-const ESDB_COLLECTION_PREFIX = 'esper-collection-';
+const ESPER_METADATA_KEY = 'esper-metadata';
+const ESPER_COLLECTION_PREFIX = 'esper-collection-';
 
 let _instance = null;
 let _vault = null;
@@ -146,7 +146,7 @@ class Esper {
         const { name, version, store, schema } = _vault;
         await store.init();
 
-        let metadata = await store.getItem(ESDB_METADATA_KEY);
+        let metadata = await store.getItem(ESPER_METADATA_KEY);
         let oldVersion = null;
         let versionUpgraded = false;
         if (metadata && metadata.version !== version) {
@@ -161,7 +161,7 @@ class Esper {
           options: _vault.options
         });
         for (let name in schema) {
-          const collectionStoreKey = `${ESDB_COLLECTION_PREFIX}${name}`;
+          const collectionStoreKey = `${ESPER_COLLECTION_PREFIX}${name}`;
           const { model, key, indexes, migrate } = schema[name];
 
           /// create index for primary key
@@ -202,7 +202,7 @@ class Esper {
           _vault.collection[name] = collection;
         }
         // set metadata
-        await store.setItem(ESDB_METADATA_KEY, JSON.stringify({ name, version, schema }));
+        await store.setItem(ESPER_METADATA_KEY, JSON.stringify({ name, version, schema }));
       } catch (e) {
         EsperLog.error(e.message);
       }
