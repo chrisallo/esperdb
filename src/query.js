@@ -1,5 +1,5 @@
 import EsperLog from "./utils/log";
-import { EsperError } from "./esper";
+import EsperError from "./error";
 
 const _match = (item, conditions) => {
   try {

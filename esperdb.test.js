@@ -31,7 +31,7 @@
     });
   }
 
-  describe('esdb test', function () {
+  describe('esperdb test', function () {
     describe('unit test', function () {
       interfaceTest();
       kernelTest();
