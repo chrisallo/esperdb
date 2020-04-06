@@ -253,6 +253,13 @@ class Btree {
     }
     return false;
   }
+  clear() {
+    const { root } = _private.get(this);
+    _private.set(this, {
+      root: root.spawn(),
+      count: 0
+    });
+  }
   iterate(handler) {
     let index = 0;
     const { root } = _private.get(this);
@@ -274,3 +281,5 @@ class Btree {
     root.prettyprint();
   }
 }
+
+export default Btree;
