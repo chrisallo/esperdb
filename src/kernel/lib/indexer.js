@@ -1,4 +1,4 @@
-import Btree from "./btree";
+import EsperBtree from "./btree";
 
 const REVERSE_MARKER = /^--/;
 const DEFAULT_BTREE_ORDER = 50;
@@ -9,14 +9,16 @@ const _private = new WeakMap();
 export default class EsperIndexer {
   constructor({
     collectionName = '',
+    primaryKey = null,
     columns = []
   }) {
     _private.set(this, {
       collectionName,
       columns,
-      btree: new Btree({
+      btree: new EsperBtree({
         order: DEFAULT_BTREE_ORDER,
         min: DEFAULT_MIN_ITEMS,
+        primaryKey,
         compare: (a, b) => {
           for (let i in this.columns) {
             const col = this.columns[i].replace(REVERSE_MARKER, '');
@@ -56,7 +58,7 @@ export default class EsperIndexer {
   }
   put(data) {
     const { btree } = _private.get(this);
-    return btree.add(data);
+    return btree.put(data);
   }
   replace(oldData, newData) {
     const { btree } = _private.get(this);

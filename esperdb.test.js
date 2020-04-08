@@ -170,8 +170,8 @@
   var MIN_ORDER = 2;
   var _seed = 0;
 
-  var BtreeNode = /*#__PURE__*/function () {
-    function BtreeNode(_ref) {
+  var EsperBtreeNode = /*#__PURE__*/function () {
+    function EsperBtreeNode(_ref) {
       var _ref$order = _ref.order,
           order = _ref$order === void 0 ? DEFAULT_ORDER : _ref$order,
           _ref$min = _ref.min,
@@ -183,7 +183,7 @@
           _ref$compare = _ref.compare,
           compare = _ref$compare === void 0 ? DEFAULT_COMPARE : _ref$compare;
 
-      classCallCheck(this, BtreeNode);
+      classCallCheck(this, EsperBtreeNode);
 
       this._nid = ++_seed;
       this.options = {
@@ -199,10 +199,10 @@
       this.children = [null]; // always have a trailing child
     }
 
-    createClass(BtreeNode, [{
+    createClass(EsperBtreeNode, [{
       key: "spawn",
       value: function spawn() {
-        return new BtreeNode(_objectSpread({}, this.options));
+        return new EsperBtreeNode(_objectSpread({}, this.options));
       }
     }, {
       key: "get",
@@ -467,26 +467,26 @@
       }
     }]);
 
-    return BtreeNode;
+    return EsperBtreeNode;
   }();
 
   var _private = new WeakMap();
 
-  var Btree = /*#__PURE__*/function () {
-    function Btree() {
+  var EsperBtree = /*#__PURE__*/function () {
+    function EsperBtree() {
       var options = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : {};
 
-      classCallCheck(this, Btree);
+      classCallCheck(this, EsperBtree);
 
       options.order = Math.max(MIN_ORDER, options.order || DEFAULT_ORDER);
 
       _private.set(this, {
-        root: new BtreeNode(_objectSpread({}, options)),
+        root: new EsperBtreeNode(_objectSpread({}, options)),
         count: 0
       });
     }
 
-    createClass(Btree, [{
+    createClass(EsperBtree, [{
       key: "iterateFrom",
       value: function iterateFrom(data, handler) {
         var index = 0;
@@ -499,7 +499,7 @@
         while (stack.length > 0) {
           var val = stack.pop();
 
-          if (val instanceof BtreeNode) {
+          if (val instanceof EsperBtreeNode) {
             var _val$placeOf = val.placeOf(data),
                 _val$placeOf2 = slicedToArray(_val$placeOf, 2),
                 _index2 = _val$placeOf2[0],
@@ -532,7 +532,7 @@
         while (stack.length > 0) {
           var val = stack.pop();
 
-          if (val instanceof BtreeNode) {
+          if (val instanceof EsperBtreeNode) {
             for (var i = val.children.length - 1; i >= 0; i--) {
               if (i < val.values.length) stack.push(val.values[i]);
               if (val.children[i]) stack.push(val.children[i]);
@@ -710,7 +710,7 @@
       }
     }]);
 
-    return Btree;
+    return EsperBtree;
   }();
 
   function ownKeys$1(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
@@ -763,7 +763,7 @@
       });
       var bt = null;
       before(function (done) {
-        bt = new Btree({
+        bt = new EsperBtree({
           order: 50,
           unique: false,
           primaryKey: 'k',
@@ -871,9 +871,10 @@
         data.forEach(function (value) {
           bt.put(value);
         });
+        var middle = sorted[parseInt(sorted.length / 2)].n;
         var cursor = sorted.map(function (d) {
           return d.n;
-        }).indexOf(10);
+        }).indexOf(middle);
         var list = [];
         bt.iterateFrom(sorted[cursor], function (x, i) {
           assert.equal(i, list.length);
@@ -895,9 +896,10 @@
         data.forEach(function (value) {
           bt.put(value);
         });
+        var middle = sorted[parseInt(sorted.length / 2)].n;
         var cursor = sorted.map(function (d) {
           return d.n;
-        }).indexOf(10);
+        }).indexOf(middle);
         var list = [];
         bt.iterateFrom({
           n: sorted[cursor].n - 0.5
@@ -1123,6 +1125,423 @@
 
         for (var _i16 = 1; _i16 < list.length; _i16++) {
           assert.isAtLeast(list[_i16].n, list[_i16 - 1].n);
+        }
+
+        done();
+      });
+    });
+    describe('btree unique', function () {
+      this.timeout(60000);
+      var seed = 0;
+      var cache = new Set();
+      var data = [];
+      var uniqueData = [];
+
+      for (var i = 0; i < ADD_COUNT; i++) {
+        var n = parseInt(RANGE * Math.random()) % RANGE;
+        var x = {
+          k: "k_".concat(++seed),
+          n: n
+        };
+
+        if (!cache.has(n)) {
+          cache.add(n);
+          uniqueData.push(x);
+        }
+
+        data.push(x);
+      }
+
+      var updated = [];
+
+      for (var _i17 = 0; _i17 < UPDATE_COUNT; _i17++) {
+        var idx = parseInt((data.length - 1) * Math.random());
+        if (!updated.includes(data[idx])) updated.push(data[idx]);
+      }
+
+      var removed = [];
+
+      for (var _i18 = 0; _i18 < REMOVE_COUNT; _i18++) {
+        var _idx2 = parseInt((data.length - 1) * Math.random());
+
+        if (!removed.includes(data[_idx2])) removed.push(data[_idx2]);
+      }
+
+      var sorted = [].concat(uniqueData).sort(function (a, b) {
+        return a.n - b.n;
+      });
+      var bt = null;
+      before(function (done) {
+        bt = new EsperBtree({
+          order: 50,
+          unique: true,
+          compare: function compare(a, b) {
+            return a.n - b.n;
+          }
+        });
+        done();
+      });
+      beforeEach(function (done) {
+        bt.clear();
+        done();
+      });
+      it('add > iterateAll', function (done) {
+        data.forEach(function (value) {
+          bt.put(value);
+        });
+        var list = [];
+        bt.iterateAll(function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
+        });
+        assert.sameOrderedMembers(sorted.map(function (x) {
+          return x.n;
+        }), list.map(function (x) {
+          return x.n;
+        }));
+
+        for (var _i20 = 1; _i20 < list.length; _i20++) {
+          assert.isAbove(list[_i20].n, list[_i20 - 1].n);
+        }
+
+        done();
+      });
+      it('add > iterateAll break', function (done) {
+        data.forEach(function (value) {
+          bt.put(value);
+        });
+        var limit = 2000;
+        var list = [];
+        bt.iterateAll(function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
+          if (list.length === limit) return false;
+        });
+        assert.sameOrderedMembers(sorted.map(function (x) {
+          return x.n;
+        }).slice(0, limit), list.map(function (x) {
+          return x.n;
+        }));
+
+        for (var _i21 = 1; _i21 < list.length; _i21++) {
+          assert.isAbove(list[_i21].n, list[_i21 - 1].n);
+        }
+
+        done();
+      });
+      it('add > iterateFrom match top', function (done) {
+        data.forEach(function (value) {
+          bt.put(value);
+        });
+        var cursor = 0;
+        var list = [];
+        bt.iterateFrom(sorted[cursor], function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
+        });
+        assert.sameOrderedMembers(sorted.slice(cursor).map(function (x) {
+          return x.n;
+        }), list.map(function (x) {
+          return x.n;
+        }));
+
+        for (var _i22 = 1; _i22 < list.length; _i22++) {
+          assert.isAbove(list[_i22].n, list[_i22 - 1].n);
+        }
+
+        done();
+      });
+      it('add > iterateFrom not match top', function (done) {
+        data.forEach(function (value) {
+          bt.put(value);
+        });
+        var cursor = 0;
+        var list = [];
+        bt.iterateFrom({
+          n: sorted[cursor].n - 0.5
+        }, function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
+        });
+        assert.sameOrderedMembers(sorted.slice(cursor).map(function (x) {
+          return x.n;
+        }), list.map(function (x) {
+          return x.n;
+        }));
+
+        for (var _i23 = 1; _i23 < list.length; _i23++) {
+          assert.isAbove(list[_i23].n, list[_i23 - 1].n);
+        }
+
+        done();
+      });
+      it('add > iterateFrom match middle', function (done) {
+        data.forEach(function (value) {
+          bt.put(value);
+        });
+        var middle = sorted[parseInt(sorted.length / 2)].n;
+        var cursor = sorted.map(function (d) {
+          return d.n;
+        }).indexOf(middle);
+        var list = [];
+        bt.iterateFrom(sorted[cursor], function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
+        });
+        assert.sameOrderedMembers(sorted.slice(cursor).map(function (x) {
+          return x.n;
+        }), list.map(function (x) {
+          return x.n;
+        }));
+
+        for (var _i24 = 1; _i24 < list.length; _i24++) {
+          assert.isAbove(list[_i24].n, list[_i24 - 1].n);
+        }
+
+        done();
+      });
+      it('add > iterateFrom not match middle', function (done) {
+        data.forEach(function (value) {
+          bt.put(value);
+        });
+        var middle = sorted[parseInt(sorted.length / 2)].n;
+        var cursor = sorted.map(function (d) {
+          return d.n;
+        }).indexOf(middle);
+        var list = [];
+        bt.iterateFrom({
+          n: sorted[cursor].n - 0.5
+        }, function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
+        });
+        assert.sameOrderedMembers(sorted.slice(cursor).map(function (x) {
+          return x.n;
+        }), list.map(function (x) {
+          return x.n;
+        }));
+
+        for (var _i25 = 1; _i25 < list.length; _i25++) {
+          assert.isAbove(list[_i25].n, list[_i25 - 1].n);
+        }
+
+        done();
+      });
+      it('add > iterateFrom match bottom', function (done) {
+        data.forEach(function (value) {
+          bt.put(value);
+        });
+        var max = sorted.reduce(function (a, c) {
+          return Math.max(a, c.n);
+        }, 0);
+        var cursor = sorted.map(function (d) {
+          return d.n;
+        }).indexOf(max);
+        var list = [];
+        bt.iterateFrom(sorted[cursor], function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
+        });
+        assert.sameOrderedMembers(sorted.slice(cursor).map(function (x) {
+          return x.n;
+        }), list.map(function (x) {
+          return x.n;
+        }));
+
+        for (var _i26 = 1; _i26 < list.length; _i26++) {
+          assert.isAbove(list[_i26].n, list[_i26 - 1].n);
+        }
+
+        done();
+      });
+      it('add > iterateFrom not match bottom', function (done) {
+        data.forEach(function (value) {
+          bt.put(value);
+        });
+        var max = sorted.reduce(function (a, c) {
+          return Math.max(a, c.n);
+        }, 0);
+        var cursor = sorted.map(function (d) {
+          return d.n;
+        }).indexOf(max);
+        var list = [];
+        bt.iterateFrom({
+          n: sorted[cursor].n - 0.5
+        }, function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
+        });
+        assert.sameOrderedMembers(sorted.slice(cursor).map(function (x) {
+          return x.n;
+        }), list.map(function (x) {
+          return x.n;
+        }));
+
+        for (var _i27 = 1; _i27 < list.length; _i27++) {
+          assert.isAbove(list[_i27].n, list[_i27 - 1].n);
+        }
+
+        done();
+      });
+      it('add > iterateFrom not match exceed bottom', function (done) {
+        data.forEach(function (value) {
+          bt.put(value);
+        });
+        var max = sorted.reduce(function (a, c) {
+          return Math.max(a, c.n);
+        }, 0);
+        var cursor = sorted.map(function (d) {
+          return d.n;
+        }).indexOf(max);
+        var list = [];
+        bt.iterateFrom({
+          n: sorted[cursor].n + 0.5
+        }, function (x, i) {
+          list.push(x);
+        });
+        assert.sameMembers([], list);
+        done();
+      });
+      it('add > iterateFrom match break', function (done) {
+        data.forEach(function (value) {
+          bt.put(value);
+        });
+        var cursor = sorted.map(function (d) {
+          return d.n;
+        }).indexOf(10);
+        var limit = 2000;
+        var list = [];
+        bt.iterateFrom(sorted[cursor], function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
+          if (list.length === limit) return false;
+        });
+        assert.sameOrderedMembers(sorted.slice(cursor, limit + cursor).map(function (x) {
+          return x.n;
+        }), list.map(function (x) {
+          return x.n;
+        }));
+
+        for (var _i28 = 1; _i28 < list.length; _i28++) {
+          assert.isAbove(list[_i28].n, list[_i28 - 1].n);
+        }
+
+        done();
+      });
+      it('add > iterateFrom not match break', function (done) {
+        data.forEach(function (value) {
+          bt.put(value);
+        });
+        var cursor = sorted.map(function (d) {
+          return d.n;
+        }).indexOf(10);
+        var limit = 2000;
+        var list = [];
+        bt.iterateFrom({
+          n: sorted[cursor].n - 0.5
+        }, function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
+          if (list.length === limit) return false;
+        });
+        assert.sameOrderedMembers(sorted.slice(cursor, limit + cursor).map(function (x) {
+          return x.n;
+        }), list.map(function (x) {
+          return x.n;
+        }));
+
+        for (var _i29 = 1; _i29 < list.length; _i29++) {
+          assert.isAbove(list[_i29].n, list[_i29 - 1].n);
+        }
+
+        done();
+      });
+      it('add > update > iterateAll', function (done) {
+        data.forEach(function (v) {
+          bt.put(v);
+        });
+        updated.forEach(function (v) {
+          var u = _objectSpread$1({}, v, {
+            m: 'marked'
+          });
+
+          bt.put(u);
+        });
+        var list = [];
+        bt.iterateAll(function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
+        });
+        assert.isTrue(list.filter(function (x) {
+          return updated.map(function (i) {
+            return i.n;
+          }).includes(x.n);
+        }).every(function (x) {
+          return x.m === 'marked';
+        }));
+        assert.sameOrderedMembers(sorted.map(function (x) {
+          return x.n;
+        }), list.map(function (x) {
+          return x.n;
+        }));
+
+        for (var _i30 = 1; _i30 < list.length; _i30++) {
+          assert.isAbove(list[_i30].n, list[_i30 - 1].n);
+        }
+
+        done();
+      });
+      it('add > remove > iterateAll', function (done) {
+        data.forEach(function (v) {
+          bt.put(v);
+        });
+        removed.forEach(function (v) {
+          bt.remove(v);
+        });
+        var list = [];
+        bt.iterateAll(function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
+        });
+        assert.sameMembers(uniqueData.filter(function (x) {
+          return !removed.map(function (i) {
+            return i.n;
+          }).includes(x.n);
+        }).map(function (x) {
+          return x.n;
+        }), list.map(function (x) {
+          return x.n;
+        }));
+
+        for (var _i31 = 1; _i31 < list.length; _i31++) {
+          assert.isAbove(list[_i31].n, list[_i31 - 1].n);
+        }
+
+        done();
+      });
+      it('add > remove > re-add > iterateAll', function (done) {
+        data.forEach(function (v) {
+          bt.put(v);
+        });
+        removed.forEach(function (v) {
+          bt.remove(v);
+        });
+        removed.forEach(function (v) {
+          bt.put(v);
+        });
+        var list = [];
+        bt.iterateAll(function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
+        });
+        assert.sameMembers(sorted.map(function (x) {
+          return x.n;
+        }), list.map(function (x) {
+          return x.n;
+        }));
+
+        for (var _i32 = 1; _i32 < list.length; _i32++) {
+          assert.isAbove(list[_i32].n, list[_i32 - 1].n);
         }
 
         done();

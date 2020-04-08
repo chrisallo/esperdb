@@ -7,7 +7,7 @@ const MIN_ORDER = 2;
 
 let _seed = 0;
 
-class BtreeNode {
+class EsperBtreeNode {
   constructor({
     order = DEFAULT_ORDER,
     min = DEFAULT_MIN_ITEMS,
@@ -57,7 +57,7 @@ class BtreeNode {
     return this.size < this.options.min;
   }
   spawn() {
-    return new BtreeNode({ ...this.options });
+    return new EsperBtreeNode({ ...this.options });
   }
   get(i) { // => Array<data>
     return this.values[i];
@@ -209,11 +209,11 @@ class BtreeNode {
 }
 
 const _private = new WeakMap();
-class Btree {
+class EsperBtree {
   constructor(options = {}) {
     options.order = Math.max(MIN_ORDER, options.order || DEFAULT_ORDER);
     _private.set(this, {
-      root: new BtreeNode({ ...options }),
+      root: new EsperBtreeNode({ ...options }),
       count: 0
     });
   }
@@ -229,7 +229,7 @@ class Btree {
     const stack = [root];
     while (stack.length > 0) {
       const val = stack.pop();
-      if (val instanceof BtreeNode) {
+      if (val instanceof EsperBtreeNode) {
         const [index, match] = val.placeOf(data);
         for (let i = val.children.length - 1; i > index; i--) {
           if (i < val.values.length) stack.push(val.values[i]);
@@ -250,7 +250,7 @@ class Btree {
     const stack = [root];
     while (stack.length > 0) {
       const val = stack.pop();
-      if (val instanceof BtreeNode) {
+      if (val instanceof EsperBtreeNode) {
         for (let i = val.children.length - 1; i >= 0; i--) {
           if (i < val.values.length) stack.push(val.values[i]);
           if (val.children[i]) stack.push(val.children[i]);
@@ -369,4 +369,4 @@ class Btree {
   }
 }
 
-export default Btree;
+export default EsperBtree;
