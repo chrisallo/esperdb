@@ -1,6 +1,7 @@
 
 const DEFAULT_ORDER = 3;
 const DEFAULT_MIN_ITEMS = 1;
+const DEFAULT_UNIQUE = true;
 const DEFAULT_COMPARE = (a, b) => a - b;
 const MIN_ORDER = 2;
 
@@ -10,16 +11,21 @@ class BtreeNode {
   constructor({
     order = DEFAULT_ORDER,
     min = DEFAULT_MIN_ITEMS,
+    unique = DEFAULT_UNIQUE,
+    primaryKey = null,
     compare = DEFAULT_COMPARE
   }) {
     this._nid = ++_seed;
-    this.options = { order, min, compare };
-    this.values = [];
+    this.options = { order, min, unique, primaryKey, compare };
+    this.values = []; // array of array<data>
     this.parent = null;
     this.children = [null]; // always have a trailing child
   }
   get order() {
     return this.options.order;
+  }
+  get unique() {
+    return this.options.unique;
   }
   get size() {
     return this.values.length;
@@ -53,14 +59,30 @@ class BtreeNode {
   spawn() {
     return new BtreeNode({ ...this.options });
   }
-  get(i) {
+  get(i) { // => Array<data>
     return this.values[i];
+  }
+  indexAtValues(index, val) {
+    const pk = this.options.primaryKey;
+    if (pk) {
+      for (let i in this.values[index]) {
+        const item = this.values[index][i];
+        if (item[pk] === val[pk]) {
+          return parseInt(i);
+        }
+      }
+      return -1;
+    } else {
+      return this.values[index].indexOf(val);
+    }
   }
   placeOf(val) { // => [index, isMatch]
     for (let i = 0; i < this.values.length; i++) {
-      const compared = this.options.compare(val, this.values[i]);
-      if (compared <= 0) {
-        return [i, compared === 0];
+      if (this.values[i].length > 0) {
+        const compared = this.options.compare(val, this.values[i][0]);
+        if (compared <= 0) {
+          return [i, compared === 0];
+        }
       }
     }
     return [this.values.length, false];
@@ -93,7 +115,7 @@ class BtreeNode {
         right.children = this.children.slice(pivot + 1);
         right.children.forEach(c => { if (c) c.parent = right; });
 
-        const [index, _] = this.parent.placeOf(this.values[pivot]);
+        const [index, _] = this.parent.placeOf(this.values[pivot][0]);
         this.parent.values.splice(index, 0, this.values[pivot]);
         this.parent.children.splice(index + 1, 0, right);
         this.parent.children.forEach(c => { if (c) c.parent = this.parent; });
@@ -195,6 +217,9 @@ class Btree {
       count: 0
     });
   }
+  get unique() {
+    return _private.get(this).root.unique;
+  }
   get count() {
     return _private.get(this).count;
   }
@@ -212,8 +237,10 @@ class Btree {
         }
         if (index < val.values.length) stack.push(val.values[index]);
         if (val.children[index] && !match) stack.push(val.children[index]);
-      } else {
-        if (handler(val, index++) === false) break;
+      } else if (Array.isArray(val)) {
+        for (let i in val) {
+          if (handler(val[i], index++) === false) return;
+        }
       }
     }
   }
@@ -228,28 +255,57 @@ class Btree {
           if (i < val.values.length) stack.push(val.values[i]);
           if (val.children[i]) stack.push(val.children[i]);
         }
-      } else {
-        if (handler(val, index++) === false) break;
+      } else if (Array.isArray(val)) {
+        for (let i in val) {
+          if (handler(val[i], index++) === false) return;
+        }
       }
     }
   }
-  add(val) { // => inserted: boolean
+  put(val) { // => inserted: boolean
     const { root } = _private.get(this);
     let node = root;
     while (!node.leaf) {
       const [index, match] = node.placeOf(val);
-      if (match) return false;
+      if (match) {
+        if (!this.unique) {
+          const valueIndex = node.indexAtValues(index, val);
+          if (valueIndex < 0) {
+            node.values[index].push(val);
+            _private.get(this).count++;
+            return true;
+          } else {
+            node.values[index][valueIndex] = val;
+          }
+        } else {
+          node.values[index] = [val];
+        }
+        return false;
+      }
       node = node.children[index];
     }
     const [index, match] = node.placeOf(val);
     if (!match) {
-      node.values.splice(index, 0, val);
+      node.values.splice(index, 0, [val]);
       node.children.splice(index, 0, null);
       if (node.overflow) node.resolveOverflow();
       _private.get(this).count++;
       return true;
+    } else {
+      if (!this.unique) {
+        const valueIndex = node.indexAtValues(index, val);
+        if (valueIndex < 0) {
+          node.values[index].push(val);
+          _private.get(this).count++;
+          return true;
+        } else {
+          node.values[index][valueIndex] = val;
+        }
+      } else {
+        node.values[index] = [val];
+      }
+      return false;
     }
-    return false;
   }
   remove(val) { // => removed: boolean
     const { root } = _private.get(this);
@@ -257,19 +313,25 @@ class Btree {
     while (!node.leaf) {
       const [index, match] = node.placeOf(val);
       if (match) {
-        let nextLeafNode = node.children[index + 1];
-        while (!nextLeafNode.leaf) {
-          nextLeafNode = nextLeafNode.children[0];
-        }
+        if (node.values[index].length === 1) {
+          let nextLeafNode = node.children[index + 1];
+          while (!nextLeafNode.leaf) {
+            nextLeafNode = nextLeafNode.children[0];
+          }
 
-        const swapper = nextLeafNode.values[0];
-        nextLeafNode.values[0] = node.values[index];
-        node.values[index] = swapper;
+          const swapper = nextLeafNode.values[0];
+          nextLeafNode.values[0] = node.values[index];
+          node.values[index] = swapper;
 
-        nextLeafNode.values.splice(0, 1);
-        nextLeafNode.children.splice(0, 1);
-        if (nextLeafNode.underflow) {
-          nextLeafNode.resolveUnderflow();
+          nextLeafNode.values.splice(0, 1);
+          nextLeafNode.children.splice(0, 1);
+          if (nextLeafNode.underflow) {
+            nextLeafNode.resolveUnderflow();
+          }
+        } else {
+          const valueIndex = node.indexAtValues(index, val);
+          if (valueIndex > -1)
+            node.values[index].splice(valueIndex, 1);
         }
         _private.get(this).count--;
         return true;
@@ -278,10 +340,16 @@ class Btree {
     }
     const [index, match] = node.placeOf(val);
     if (match) {
-      node.values.splice(index, 1);
-      node.children.splice(index, 1);
-      if (node.underflow) {
-        node.resolveUnderflow();
+      if (node.values[index].length === 1) {
+        node.values.splice(index, 1);
+        node.children.splice(index, 1);
+        if (node.underflow) {
+          node.resolveUnderflow();
+        }
+      } else {
+        const valueIndex = node.indexAtValues(index, val);
+        if (valueIndex > -1)
+          node.values[index].splice(valueIndex, 1);
       }
       _private.get(this).count--;
       return true;

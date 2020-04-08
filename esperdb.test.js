@@ -18,6 +18,23 @@
     });
   }
 
+  function _defineProperty(obj, key, value) {
+    if (key in obj) {
+      Object.defineProperty(obj, key, {
+        value: value,
+        enumerable: true,
+        configurable: true,
+        writable: true
+      });
+    } else {
+      obj[key] = value;
+    }
+
+    return obj;
+  }
+
+  var defineProperty = _defineProperty;
+
   function _arrayLikeToArray(arr, len) {
     if (len == null || len > arr.length) len = arr.length;
 
@@ -112,23 +129,6 @@
 
   var slicedToArray = _slicedToArray;
 
-  function _defineProperty(obj, key, value) {
-    if (key in obj) {
-      Object.defineProperty(obj, key, {
-        value: value,
-        enumerable: true,
-        configurable: true,
-        writable: true
-      });
-    } else {
-      obj[key] = value;
-    }
-
-    return obj;
-  }
-
-  var defineProperty = _defineProperty;
-
   function _classCallCheck(instance, Constructor) {
     if (!(instance instanceof Constructor)) {
       throw new TypeError("Cannot call a class as a function");
@@ -161,6 +161,7 @@
 
   var DEFAULT_ORDER = 3;
   var DEFAULT_MIN_ITEMS = 1;
+  var DEFAULT_UNIQUE = true;
 
   var DEFAULT_COMPARE = function DEFAULT_COMPARE(a, b) {
     return a - b;
@@ -175,6 +176,10 @@
           order = _ref$order === void 0 ? DEFAULT_ORDER : _ref$order,
           _ref$min = _ref.min,
           min = _ref$min === void 0 ? DEFAULT_MIN_ITEMS : _ref$min,
+          _ref$unique = _ref.unique,
+          unique = _ref$unique === void 0 ? DEFAULT_UNIQUE : _ref$unique,
+          _ref$primaryKey = _ref.primaryKey,
+          primaryKey = _ref$primaryKey === void 0 ? null : _ref$primaryKey,
           _ref$compare = _ref.compare,
           compare = _ref$compare === void 0 ? DEFAULT_COMPARE : _ref$compare;
 
@@ -184,9 +189,12 @@
       this.options = {
         order: order,
         min: min,
+        unique: unique,
+        primaryKey: primaryKey,
         compare: compare
       };
-      this.values = [];
+      this.values = []; // array of array<data>
+
       this.parent = null;
       this.children = [null]; // always have a trailing child
     }
@@ -199,17 +207,39 @@
     }, {
       key: "get",
       value: function get(i) {
+        // => Array<data>
         return this.values[i];
+      }
+    }, {
+      key: "indexAtValues",
+      value: function indexAtValues(index, val) {
+        var pk = this.options.primaryKey;
+
+        if (pk) {
+          for (var i in this.values[index]) {
+            var item = this.values[index][i];
+
+            if (item[pk] === val[pk]) {
+              return parseInt(i);
+            }
+          }
+
+          return -1;
+        } else {
+          return this.values[index].indexOf(val);
+        }
       }
     }, {
       key: "placeOf",
       value: function placeOf(val) {
         // => [index, isMatch]
         for (var i = 0; i < this.values.length; i++) {
-          var compared = this.options.compare(val, this.values[i]);
+          if (this.values[i].length > 0) {
+            var compared = this.options.compare(val, this.values[i][0]);
 
-          if (compared <= 0) {
-            return [i, compared === 0];
+            if (compared <= 0) {
+              return [i, compared === 0];
+            }
           }
         }
 
@@ -258,7 +288,7 @@
               if (c) c.parent = right;
             });
 
-            var _this$parent$placeOf = this.parent.placeOf(this.values[pivot]),
+            var _this$parent$placeOf = this.parent.placeOf(this.values[pivot][0]),
                 _this$parent$placeOf2 = slicedToArray(_this$parent$placeOf, 2),
                 _index = _this$parent$placeOf2[0],
                 _ = _this$parent$placeOf2[1];
@@ -388,6 +418,11 @@
         return this.options.order;
       }
     }, {
+      key: "unique",
+      get: function get() {
+        return this.options.unique;
+      }
+    }, {
       key: "size",
       get: function get() {
         return this.values.length;
@@ -477,8 +512,10 @@
 
             if (_index2 < val.values.length) stack.push(val.values[_index2]);
             if (val.children[_index2] && !match) stack.push(val.children[_index2]);
-          } else {
-            if (handler(val, index++) === false) break;
+          } else if (Array.isArray(val)) {
+            for (var _i in val) {
+              if (handler(val[_i], index++) === false) return;
+            }
           }
         }
       }
@@ -500,14 +537,16 @@
               if (i < val.values.length) stack.push(val.values[i]);
               if (val.children[i]) stack.push(val.children[i]);
             }
-          } else {
-            if (handler(val, index++) === false) break;
+          } else if (Array.isArray(val)) {
+            for (var _i2 in val) {
+              if (handler(val[_i2], index++) === false) return;
+            }
           }
         }
       }
     }, {
-      key: "add",
-      value: function add(val) {
+      key: "put",
+      value: function put(val) {
         // => inserted: boolean
         var _private$get3 = _private.get(this),
             root = _private$get3.root;
@@ -520,7 +559,25 @@
               _index3 = _node$placeOf2[0],
               _match = _node$placeOf2[1];
 
-          if (_match) return false;
+          if (_match) {
+            if (!this.unique) {
+              var valueIndex = node.indexAtValues(_index3, val);
+
+              if (valueIndex < 0) {
+                node.values[_index3].push(val);
+
+                _private.get(this).count++;
+                return true;
+              } else {
+                node.values[_index3][valueIndex] = val;
+              }
+            } else {
+              node.values[_index3] = [val];
+            }
+
+            return false;
+          }
+
           node = node.children[_index3];
         }
 
@@ -530,14 +587,28 @@
             match = _node$placeOf4[1];
 
         if (!match) {
-          node.values.splice(index, 0, val);
+          node.values.splice(index, 0, [val]);
           node.children.splice(index, 0, null);
           if (node.overflow) node.resolveOverflow();
           _private.get(this).count++;
           return true;
-        }
+        } else {
+          if (!this.unique) {
+            var _valueIndex = node.indexAtValues(index, val);
 
-        return false;
+            if (_valueIndex < 0) {
+              node.values[index].push(val);
+              _private.get(this).count++;
+              return true;
+            } else {
+              node.values[index][_valueIndex] = val;
+            }
+          } else {
+            node.values[index] = [val];
+          }
+
+          return false;
+        }
       }
     }, {
       key: "remove",
@@ -555,20 +626,25 @@
               _match2 = _node$placeOf6[1];
 
           if (_match2) {
-            var nextLeafNode = node.children[_index4 + 1];
+            if (node.values[_index4].length === 1) {
+              var nextLeafNode = node.children[_index4 + 1];
 
-            while (!nextLeafNode.leaf) {
-              nextLeafNode = nextLeafNode.children[0];
-            }
+              while (!nextLeafNode.leaf) {
+                nextLeafNode = nextLeafNode.children[0];
+              }
 
-            var swapper = nextLeafNode.values[0];
-            nextLeafNode.values[0] = node.values[_index4];
-            node.values[_index4] = swapper;
-            nextLeafNode.values.splice(0, 1);
-            nextLeafNode.children.splice(0, 1);
+              var swapper = nextLeafNode.values[0];
+              nextLeafNode.values[0] = node.values[_index4];
+              node.values[_index4] = swapper;
+              nextLeafNode.values.splice(0, 1);
+              nextLeafNode.children.splice(0, 1);
 
-            if (nextLeafNode.underflow) {
-              nextLeafNode.resolveUnderflow();
+              if (nextLeafNode.underflow) {
+                nextLeafNode.resolveUnderflow();
+              }
+            } else {
+              var valueIndex = node.indexAtValues(_index4, val);
+              if (valueIndex > -1) node.values[_index4].splice(valueIndex, 1);
             }
 
             _private.get(this).count--;
@@ -584,11 +660,17 @@
             match = _node$placeOf8[1];
 
         if (match) {
-          node.values.splice(index, 1);
-          node.children.splice(index, 1);
+          if (node.values[index].length === 1) {
+            node.values.splice(index, 1);
+            node.children.splice(index, 1);
 
-          if (node.underflow) {
-            node.resolveUnderflow();
+            if (node.underflow) {
+              node.resolveUnderflow();
+            }
+          } else {
+            var _valueIndex2 = node.indexAtValues(index, val);
+
+            if (_valueIndex2 > -1) node.values[index].splice(_valueIndex2, 1);
           }
 
           _private.get(this).count--;
@@ -617,6 +699,11 @@
         root.prettyprint();
       }
     }, {
+      key: "unique",
+      get: function get() {
+        return _private.get(this).root.unique;
+      }
+    }, {
       key: "count",
       get: function get() {
         return _private.get(this).count;
@@ -626,18 +713,26 @@
     return Btree;
   }();
 
+  function ownKeys$1(object, enumerableOnly) { var keys = Object.keys(object); if (Object.getOwnPropertySymbols) { var symbols = Object.getOwnPropertySymbols(object); if (enumerableOnly) symbols = symbols.filter(function (sym) { return Object.getOwnPropertyDescriptor(object, sym).enumerable; }); keys.push.apply(keys, symbols); } return keys; }
+
+  function _objectSpread$1(target) { for (var i = 1; i < arguments.length; i++) { var source = arguments[i] != null ? arguments[i] : {}; if (i % 2) { ownKeys$1(Object(source), true).forEach(function (key) { defineProperty(target, key, source[key]); }); } else if (Object.getOwnPropertyDescriptors) { Object.defineProperties(target, Object.getOwnPropertyDescriptors(source)); } else { ownKeys$1(Object(source)).forEach(function (key) { Object.defineProperty(target, key, Object.getOwnPropertyDescriptor(source, key)); }); } } return target; }
   function libBtreeTest () {
-    describe('btree', function () {
-      var ADD_COUNT = 50000;
-      var UPDATE_COUNT = 10000;
-      var REMOVE_COUNT = 12000;
-      var bt = null;
-      var range = 10000000;
+    var ADD_COUNT = 10000;
+    var UPDATE_COUNT = 2500;
+    var REMOVE_COUNT = 2000;
+    var RANGE = 5000;
+    describe('btree non-unique', function () {
+      this.timeout(60000);
+      var seed = 0;
       var data = [];
 
       for (var i = 0; i < ADD_COUNT; i++) {
-        var n = parseInt(range * Math.random()) % range;
-        if (!data.includes(n)) data.push(n);
+        var n = parseInt(RANGE * Math.random()) % RANGE;
+        var x = {
+          k: "k_".concat(++seed),
+          n: n
+        };
+        data.push(x);
       }
 
       var updated = [];
@@ -664,11 +759,17 @@
       }
 
       var sorted = [].concat(data).sort(function (a, b) {
-        return a - b;
+        return a.n - b.n;
       });
+      var bt = null;
       before(function (done) {
         bt = new Btree({
-          order: 50
+          order: 50,
+          unique: false,
+          primaryKey: 'k',
+          compare: function compare(a, b) {
+            return a.n - b.n;
+          }
         });
         done();
       });
@@ -678,251 +779,350 @@
       });
       it('add > iterateAll', function (done) {
         data.forEach(function (value) {
-          bt.add(value);
+          bt.put(value);
         });
         var list = [];
-        bt.iterateAll(function (n, i) {
-          list.push(n);
+        bt.iterateAll(function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
         });
-        assert.sameMembers(data, list);
+        assert.sameOrderedMembers(sorted.map(function (x) {
+          return x.k;
+        }), list.map(function (x) {
+          return x.k;
+        }));
 
         for (var _i4 = 1; _i4 < list.length; _i4++) {
-          assert.isAbove(list[_i4], list[_i4 - 1]);
+          assert.isAtLeast(list[_i4].n, list[_i4 - 1].n);
         }
 
         done();
       });
       it('add > iterateAll break', function (done) {
         data.forEach(function (value) {
-          bt.add(value);
+          bt.put(value);
         });
         var limit = 2000;
         var list = [];
-        bt.iterateAll(function (n, i) {
-          list.push(n);
+        bt.iterateAll(function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
           if (list.length === limit) return false;
         });
-        assert.sameMembers(sorted.slice(0, limit), list);
+        assert.sameOrderedMembers(sorted.map(function (x) {
+          return x.k;
+        }).slice(0, limit), list.map(function (x) {
+          return x.k;
+        }));
 
         for (var _i5 = 1; _i5 < list.length; _i5++) {
-          assert.isAbove(list[_i5], list[_i5 - 1]);
-        }
-
-        done();
-      });
-      it('add > update > iterateAll', function (done) {
-        data.forEach(function (v) {
-          bt.add(v);
-        });
-        updated.forEach(function (v) {
-          bt.add(v);
-        });
-        var list = [];
-        bt.iterateAll(function (n, i) {
-          list.push(n);
-        });
-        assert.sameMembers(data, list);
-
-        for (var _i6 = 1; _i6 < list.length; _i6++) {
-          assert.isAbove(list[_i6], list[_i6 - 1]);
-        }
-
-        done();
-      });
-      it('add > remove > iterateAll', function (done) {
-        data.forEach(function (v) {
-          bt.add(v);
-        });
-        removed.forEach(function (v) {
-          bt.remove(v);
-        });
-        var list = [];
-        bt.iterateAll(function (n, i) {
-          list.push(n);
-        });
-        assert.sameMembers(remained, list);
-
-        for (var _i7 = 1; _i7 < list.length; _i7++) {
-          assert.isAbove(list[_i7], list[_i7 - 1]);
-        }
-
-        done();
-      });
-      it('add > remove > re-add > iterateAll', function (done) {
-        data.forEach(function (v) {
-          bt.add(v);
-        });
-        removed.forEach(function (v) {
-          bt.remove(v);
-        });
-        removed.forEach(function (v) {
-          bt.add(v);
-        });
-        var list = [];
-        bt.iterateAll(function (n, i) {
-          list.push(n);
-        });
-        assert.sameMembers(data, list);
-
-        for (var _i8 = 1; _i8 < list.length; _i8++) {
-          assert.isAbove(list[_i8], list[_i8 - 1]);
+          assert.isAtLeast(list[_i5].n, list[_i5 - 1].n);
         }
 
         done();
       });
       it('add > iterateFrom match top', function (done) {
         data.forEach(function (value) {
-          bt.add(value);
+          bt.put(value);
         });
         var cursor = 0;
         var list = [];
-        bt.iterateFrom(sorted[cursor], function (n, i) {
-          list.push(n);
+        bt.iterateFrom(sorted[cursor], function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
         });
-        assert.sameMembers(sorted.slice(cursor), list);
+        assert.sameOrderedMembers(sorted.slice(cursor).map(function (x) {
+          return x.k;
+        }), list.map(function (x) {
+          return x.k;
+        }));
 
-        for (var _i9 = 1; _i9 < list.length; _i9++) {
-          assert.isAbove(list[_i9], list[_i9 - 1]);
+        for (var _i6 = 1; _i6 < list.length; _i6++) {
+          assert.isAtLeast(list[_i6].n, list[_i6 - 1].n);
         }
 
         done();
       });
       it('add > iterateFrom not match top', function (done) {
         data.forEach(function (value) {
-          bt.add(value);
+          bt.put(value);
         });
         var cursor = 0;
         var list = [];
-        bt.iterateFrom(sorted[cursor] - 0.5, function (n, i) {
-          list.push(n);
+        bt.iterateFrom({
+          n: sorted[cursor].n - 0.5
+        }, function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
         });
-        assert.sameMembers(sorted.slice(cursor), list);
+        assert.sameOrderedMembers(sorted.slice(cursor).map(function (x) {
+          return x.k;
+        }), list.map(function (x) {
+          return x.k;
+        }));
 
-        for (var _i10 = 1; _i10 < list.length; _i10++) {
-          assert.isAbove(list[_i10], list[_i10 - 1]);
+        for (var _i7 = 1; _i7 < list.length; _i7++) {
+          assert.isAtLeast(list[_i7].n, list[_i7 - 1].n);
         }
 
         done();
       });
       it('add > iterateFrom match middle', function (done) {
         data.forEach(function (value) {
-          bt.add(value);
+          bt.put(value);
         });
-        var cursor = 20;
+        var cursor = sorted.map(function (d) {
+          return d.n;
+        }).indexOf(10);
         var list = [];
-        bt.iterateFrom(sorted[cursor], function (n, i) {
-          list.push(n);
+        bt.iterateFrom(sorted[cursor], function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
         });
-        assert.sameMembers(sorted.slice(cursor), list);
+        assert.sameOrderedMembers(sorted.slice(cursor).map(function (x) {
+          return x.k;
+        }), list.map(function (x) {
+          return x.k;
+        }));
 
-        for (var _i11 = 1; _i11 < list.length; _i11++) {
-          assert.isAbove(list[_i11], list[_i11 - 1]);
+        for (var _i8 = 1; _i8 < list.length; _i8++) {
+          assert.isAtLeast(list[_i8].n, list[_i8 - 1].n);
         }
 
         done();
       });
       it('add > iterateFrom not match middle', function (done) {
         data.forEach(function (value) {
-          bt.add(value);
+          bt.put(value);
         });
-        var cursor = 20;
+        var cursor = sorted.map(function (d) {
+          return d.n;
+        }).indexOf(10);
         var list = [];
-        bt.iterateFrom(sorted[cursor] - 0.5, function (n, i) {
-          list.push(n);
+        bt.iterateFrom({
+          n: sorted[cursor].n - 0.5
+        }, function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
         });
-        assert.sameMembers(sorted.slice(cursor), list);
+        assert.sameOrderedMembers(sorted.slice(cursor).map(function (x) {
+          return x.k;
+        }), list.map(function (x) {
+          return x.k;
+        }));
 
-        for (var _i12 = 1; _i12 < list.length; _i12++) {
-          assert.isAbove(list[_i12], list[_i12 - 1]);
+        for (var _i9 = 1; _i9 < list.length; _i9++) {
+          assert.isAtLeast(list[_i9].n, list[_i9 - 1].n);
         }
 
         done();
       });
       it('add > iterateFrom match bottom', function (done) {
         data.forEach(function (value) {
-          bt.add(value);
+          bt.put(value);
         });
-        var cursor = data.length - 1;
+        var max = sorted.reduce(function (a, c) {
+          return Math.max(a, c.n);
+        }, 0);
+        var cursor = sorted.map(function (d) {
+          return d.n;
+        }).indexOf(max);
         var list = [];
-        bt.iterateFrom(sorted[cursor], function (n, i) {
-          list.push(n);
+        bt.iterateFrom(sorted[cursor], function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
         });
-        assert.sameMembers(sorted.slice(cursor), list);
+        assert.sameOrderedMembers(sorted.slice(cursor).map(function (x) {
+          return x.k;
+        }), list.map(function (x) {
+          return x.k;
+        }));
 
-        for (var _i13 = 1; _i13 < list.length; _i13++) {
-          assert.isAbove(list[_i13], list[_i13 - 1]);
+        for (var _i10 = 1; _i10 < list.length; _i10++) {
+          assert.isAtLeast(list[_i10].n, list[_i10 - 1].n);
         }
 
         done();
       });
       it('add > iterateFrom not match bottom', function (done) {
         data.forEach(function (value) {
-          bt.add(value);
+          bt.put(value);
         });
-        var cursor = data.length - 1;
+        var max = sorted.reduce(function (a, c) {
+          return Math.max(a, c.n);
+        }, 0);
+        var cursor = sorted.map(function (d) {
+          return d.n;
+        }).indexOf(max);
         var list = [];
-        bt.iterateFrom(sorted[cursor] - 0.5, function (n, i) {
-          list.push(n);
+        bt.iterateFrom({
+          n: sorted[cursor].n - 0.5
+        }, function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
         });
-        assert.sameMembers(sorted.slice(cursor), list);
+        assert.sameOrderedMembers(sorted.slice(cursor).map(function (x) {
+          return x.k;
+        }), list.map(function (x) {
+          return x.k;
+        }));
 
-        for (var _i14 = 1; _i14 < list.length; _i14++) {
-          assert.isAbove(list[_i14], list[_i14 - 1]);
+        for (var _i11 = 1; _i11 < list.length; _i11++) {
+          assert.isAtLeast(list[_i11].n, list[_i11 - 1].n);
         }
 
         done();
       });
       it('add > iterateFrom not match exceed bottom', function (done) {
         data.forEach(function (value) {
-          bt.add(value);
+          bt.put(value);
         });
         var cursor = data.length - 1;
         var list = [];
-        bt.iterateFrom(sorted[cursor] + 0.5, function (n, i) {
-          list.push(n);
+        bt.iterateFrom({
+          n: sorted[cursor].n + 0.5
+        }, function (x, i) {
+          list.push(x);
         });
         assert.sameMembers([], list);
-
-        for (var _i15 = 1; _i15 < list.length; _i15++) {
-          assert.isAbove(list[_i15], list[_i15 - 1]);
-        }
-
         done();
       });
       it('add > iterateFrom match break', function (done) {
         data.forEach(function (value) {
-          bt.add(value);
+          bt.put(value);
         });
-        var cursor = 20;
+        var cursor = sorted.map(function (d) {
+          return d.n;
+        }).indexOf(10);
         var limit = 2000;
         var list = [];
-        bt.iterateFrom(sorted[cursor], function (n, i) {
-          list.push(n);
+        bt.iterateFrom(sorted[cursor], function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
           if (list.length === limit) return false;
         });
-        assert.sameMembers(sorted.slice(cursor, limit + cursor), list);
+        assert.sameOrderedMembers(sorted.slice(cursor, limit + cursor).map(function (x) {
+          return x.k;
+        }), list.map(function (x) {
+          return x.k;
+        }));
 
-        for (var _i16 = 1; _i16 < list.length; _i16++) {
-          assert.isAbove(list[_i16], list[_i16 - 1]);
+        for (var _i12 = 1; _i12 < list.length; _i12++) {
+          assert.isAtLeast(list[_i12].n, list[_i12 - 1].n);
         }
 
         done();
       });
       it('add > iterateFrom not match break', function (done) {
         data.forEach(function (value) {
-          bt.add(value);
+          bt.put(value);
         });
-        var cursor = 20;
+        var cursor = sorted.map(function (d) {
+          return d.n;
+        }).indexOf(10);
         var limit = 2000;
         var list = [];
-        bt.iterateFrom(sorted[cursor] - 0.5, function (n, i) {
-          list.push(n);
+        bt.iterateFrom({
+          n: sorted[cursor].n - 0.5
+        }, function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
           if (list.length === limit) return false;
         });
-        assert.sameMembers(sorted.slice(cursor, limit + cursor), list);
+        assert.sameOrderedMembers(sorted.slice(cursor, limit + cursor).map(function (x) {
+          return x.k;
+        }), list.map(function (x) {
+          return x.k;
+        }));
 
-        for (var _i17 = 1; _i17 < list.length; _i17++) {
-          assert.isAbove(list[_i17], list[_i17 - 1]);
+        for (var _i13 = 1; _i13 < list.length; _i13++) {
+          assert.isAtLeast(list[_i13].n, list[_i13 - 1].n);
+        }
+
+        done();
+      });
+      it('add > update > iterateAll', function (done) {
+        data.forEach(function (v) {
+          bt.put(v);
+        });
+        updated.forEach(function (v) {
+          var u = _objectSpread$1({}, v, {
+            m: 'marked'
+          });
+
+          bt.put(u);
+        });
+        var list = [];
+        bt.iterateAll(function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
+        });
+        assert.isTrue(list.filter(function (x) {
+          return updated.map(function (i) {
+            return i.k;
+          }).includes(x.k);
+        }).every(function (x) {
+          return x.m === 'marked';
+        }));
+        assert.sameOrderedMembers(sorted.map(function (x) {
+          return x.k;
+        }), list.map(function (x) {
+          return x.k;
+        }));
+
+        for (var _i14 = 1; _i14 < list.length; _i14++) {
+          assert.isAtLeast(list[_i14].n, list[_i14 - 1].n);
+        }
+
+        done();
+      });
+      it('add > remove > iterateAll', function (done) {
+        data.forEach(function (v) {
+          bt.put(v);
+        });
+        removed.forEach(function (v) {
+          bt.remove(v);
+        });
+        var list = [];
+        bt.iterateAll(function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
+        });
+        assert.sameMembers(remained.map(function (x) {
+          return x.k;
+        }), list.map(function (x) {
+          return x.k;
+        }));
+
+        for (var _i15 = 1; _i15 < list.length; _i15++) {
+          assert.isAtLeast(list[_i15].n, list[_i15 - 1].n);
+        }
+
+        done();
+      });
+      it('add > remove > re-add > iterateAll', function (done) {
+        data.forEach(function (v) {
+          bt.put(v);
+        });
+        removed.forEach(function (v) {
+          bt.remove(v);
+        });
+        removed.forEach(function (v) {
+          bt.put(v);
+        });
+        var list = [];
+        bt.iterateAll(function (x, i) {
+          assert.equal(i, list.length);
+          list.push(x);
+        });
+        assert.sameMembers(sorted.map(function (x) {
+          return x.k;
+        }), list.map(function (x) {
+          return x.k;
+        }));
+
+        for (var _i16 = 1; _i16 < list.length; _i16++) {
+          assert.isAtLeast(list[_i16].n, list[_i16 - 1].n);
         }
 
         done();
@@ -931,7 +1131,7 @@
   }
 
   function kernelTest () {
-    describe('kernel test', function () {
+    describe('kernel', function () {
       libBtreeTest();
     });
   }
