@@ -35,6 +35,10 @@
 
   var defineProperty = _defineProperty;
 
+  var config = {
+    timeout: 60000
+  };
+
   function _arrayLikeToArray(arr, len) {
     if (len == null || len > arr.length) len = arr.length;
 
@@ -722,7 +726,7 @@
     var REMOVE_COUNT = 2000;
     var RANGE = 5000;
     describe('btree non-unique', function () {
-      this.timeout(60000);
+      this.timeout(config.timeout);
       var seed = 0;
       var data = [];
 
@@ -777,7 +781,7 @@
         bt.clear();
         done();
       });
-      it('add > iterateAll', function (done) {
+      it('put > iterateAll', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
@@ -798,7 +802,7 @@
 
         done();
       });
-      it('add > iterateAll break', function (done) {
+      it('put > iterateAll break', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
@@ -821,7 +825,7 @@
 
         done();
       });
-      it('add > iterateFrom match top', function (done) {
+      it('put > iterateFrom match top', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
@@ -843,7 +847,7 @@
 
         done();
       });
-      it('add > iterateFrom not match top', function (done) {
+      it('put > iterateFrom not match top', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
@@ -867,7 +871,7 @@
 
         done();
       });
-      it('add > iterateFrom match middle', function (done) {
+      it('put > iterateFrom match middle', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
@@ -892,7 +896,7 @@
 
         done();
       });
-      it('add > iterateFrom not match middle', function (done) {
+      it('put > iterateFrom not match middle', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
@@ -919,7 +923,7 @@
 
         done();
       });
-      it('add > iterateFrom match bottom', function (done) {
+      it('put > iterateFrom match bottom', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
@@ -946,7 +950,7 @@
 
         done();
       });
-      it('add > iterateFrom not match bottom', function (done) {
+      it('put > iterateFrom not match bottom', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
@@ -975,7 +979,7 @@
 
         done();
       });
-      it('add > iterateFrom not match exceed bottom', function (done) {
+      it('put > iterateFrom not match exceed bottom', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
@@ -989,13 +993,14 @@
         assert.sameMembers([], list);
         done();
       });
-      it('add > iterateFrom match break', function (done) {
+      it('put > iterateFrom match break', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
+        var middle = sorted[2].n;
         var cursor = sorted.map(function (d) {
           return d.n;
-        }).indexOf(10);
+        }).indexOf(middle);
         var limit = 2000;
         var list = [];
         bt.iterateFrom(sorted[cursor], function (x, i) {
@@ -1015,13 +1020,14 @@
 
         done();
       });
-      it('add > iterateFrom not match break', function (done) {
+      it('put > iterateFrom not match break', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
+        var middle = sorted[2].n;
         var cursor = sorted.map(function (d) {
           return d.n;
-        }).indexOf(10);
+        }).indexOf(middle);
         var limit = 2000;
         var list = [];
         bt.iterateFrom({
@@ -1043,7 +1049,7 @@
 
         done();
       });
-      it('add > update > iterateAll', function (done) {
+      it('put > update > iterateAll', function (done) {
         data.forEach(function (v) {
           bt.put(v);
         });
@@ -1078,7 +1084,7 @@
 
         done();
       });
-      it('add > remove > iterateAll', function (done) {
+      it('put > remove > iterateAll', function (done) {
         data.forEach(function (v) {
           bt.put(v);
         });
@@ -1102,7 +1108,7 @@
 
         done();
       });
-      it('add > remove > re-add > iterateAll', function (done) {
+      it('put > remove > re-put > iterateAll', function (done) {
         data.forEach(function (v) {
           bt.put(v);
         });
@@ -1185,7 +1191,7 @@
         bt.clear();
         done();
       });
-      it('add > iterateAll', function (done) {
+      it('put > iterateAll', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
@@ -1206,7 +1212,7 @@
 
         done();
       });
-      it('add > iterateAll break', function (done) {
+      it('put > iterateAll break', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
@@ -1229,7 +1235,7 @@
 
         done();
       });
-      it('add > iterateFrom match top', function (done) {
+      it('put > iterateFrom match top', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
@@ -1251,7 +1257,7 @@
 
         done();
       });
-      it('add > iterateFrom not match top', function (done) {
+      it('put > iterateFrom not match top', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
@@ -1275,7 +1281,7 @@
 
         done();
       });
-      it('add > iterateFrom match middle', function (done) {
+      it('put > iterateFrom match middle', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
@@ -1300,7 +1306,7 @@
 
         done();
       });
-      it('add > iterateFrom not match middle', function (done) {
+      it('put > iterateFrom not match middle', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
@@ -1327,7 +1333,7 @@
 
         done();
       });
-      it('add > iterateFrom match bottom', function (done) {
+      it('put > iterateFrom match bottom', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
@@ -1354,7 +1360,7 @@
 
         done();
       });
-      it('add > iterateFrom not match bottom', function (done) {
+      it('put > iterateFrom not match bottom', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
@@ -1383,7 +1389,7 @@
 
         done();
       });
-      it('add > iterateFrom not match exceed bottom', function (done) {
+      it('put > iterateFrom not match exceed bottom', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
@@ -1402,13 +1408,14 @@
         assert.sameMembers([], list);
         done();
       });
-      it('add > iterateFrom match break', function (done) {
+      it('put > iterateFrom match break', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
+        var middle = sorted[2].n;
         var cursor = sorted.map(function (d) {
           return d.n;
-        }).indexOf(10);
+        }).indexOf(middle);
         var limit = 2000;
         var list = [];
         bt.iterateFrom(sorted[cursor], function (x, i) {
@@ -1428,13 +1435,14 @@
 
         done();
       });
-      it('add > iterateFrom not match break', function (done) {
+      it('put > iterateFrom not match break', function (done) {
         data.forEach(function (value) {
           bt.put(value);
         });
+        var middle = sorted[2].n;
         var cursor = sorted.map(function (d) {
           return d.n;
-        }).indexOf(10);
+        }).indexOf(middle);
         var limit = 2000;
         var list = [];
         bt.iterateFrom({
@@ -1456,7 +1464,7 @@
 
         done();
       });
-      it('add > update > iterateAll', function (done) {
+      it('put > update > iterateAll', function (done) {
         data.forEach(function (v) {
           bt.put(v);
         });
@@ -1491,7 +1499,7 @@
 
         done();
       });
-      it('add > remove > iterateAll', function (done) {
+      it('put > remove > iterateAll', function (done) {
         data.forEach(function (v) {
           bt.put(v);
         });
@@ -1519,7 +1527,7 @@
 
         done();
       });
-      it('add > remove > re-add > iterateAll', function (done) {
+      it('put > remove > re-put > iterateAll', function (done) {
         data.forEach(function (v) {
           bt.put(v);
         });
@@ -1549,9 +1557,391 @@
     });
   }
 
+  function createCommonjsModule(fn, module) {
+  	return module = { exports: {} }, fn(module, module.exports), module.exports;
+  }
+
+  var _typeof_1 = createCommonjsModule(function (module) {
+  function _typeof(obj) {
+    "@babel/helpers - typeof";
+
+    if (typeof Symbol === "function" && typeof Symbol.iterator === "symbol") {
+      module.exports = _typeof = function _typeof(obj) {
+        return typeof obj;
+      };
+    } else {
+      module.exports = _typeof = function _typeof(obj) {
+        return obj && typeof Symbol === "function" && obj.constructor === Symbol && obj !== Symbol.prototype ? "symbol" : typeof obj;
+      };
+    }
+
+    return _typeof(obj);
+  }
+
+  module.exports = _typeof;
+  });
+
+  var REVERSE_MARKER = /^--/;
+  var DEFAULT_BTREE_ORDER = 50;
+  var DEFAULT_MIN_ITEMS$1 = 3;
+
+  var _private$1 = new WeakMap();
+
+  var EsperIndexer = /*#__PURE__*/function () {
+    function EsperIndexer(_ref) {
+      var _this = this;
+
+      var _ref$collectionName = _ref.collectionName,
+          collectionName = _ref$collectionName === void 0 ? '' : _ref$collectionName,
+          _ref$primaryKey = _ref.primaryKey,
+          primaryKey = _ref$primaryKey === void 0 ? null : _ref$primaryKey,
+          _ref$columns = _ref.columns,
+          columns = _ref$columns === void 0 ? [] : _ref$columns;
+
+      classCallCheck(this, EsperIndexer);
+
+      _private$1.set(this, {
+        collectionName: collectionName,
+        primaryKey: primaryKey,
+        columns: columns,
+        btree: new EsperBtree({
+          order: DEFAULT_BTREE_ORDER,
+          min: DEFAULT_MIN_ITEMS$1,
+          primaryKey: primaryKey,
+          unique: primaryKey && columns.length === 1 && columns[0] === primaryKey,
+          compare: function compare(a, b) {
+            for (var i in _this.columns) {
+              var col = _this.columns[i].replace(REVERSE_MARKER, '');
+
+              var rev = REVERSE_MARKER.test(_this.columns[i]) ? -1 : 1;
+
+              var ta = _typeof_1(a[col]),
+                  tb = _typeof_1(b[col]),
+                  va = a[col],
+                  vb = b[col];
+
+              if (ta === tb) {
+                if (va !== vb) {
+                  switch (ta) {
+                    case 'boolean':
+                      return va ? rev : -rev;
+
+                    case 'number':
+                      return va > vb ? rev : -rev;
+
+                    case 'string':
+                      return va.localeCompare(vb) > 0 ? rev : -rev;
+
+                    default:
+                      return rev;
+                    // object, function, etc
+                  }
+                }
+              } else {
+                if (ta === 'undefined' || va === null) return -rev;else if (tb === 'undefined' || vb === null) return rev;
+              }
+            }
+
+            return 0;
+          }
+        })
+      });
+    }
+
+    createClass(EsperIndexer, [{
+      key: "search",
+      value: function search(query) {
+        var _private$get = _private$1.get(this),
+            primaryKey = _private$get.primaryKey,
+            btree = _private$get.btree;
+
+        var result = null;
+        btree.iterateFrom(query, function (item) {
+          if (item[primaryKey] === query[primaryKey]) {
+            result = item;
+          }
+
+          return false;
+        });
+        return result;
+      }
+    }, {
+      key: "iterate",
+      value: function iterate(query) {
+        var limit = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
+
+        var _private$get2 = _private$1.get(this),
+            btree = _private$get2.btree;
+
+        var result = [];
+        btree.iterateFrom(query, function (item) {
+          result.push(item);
+          if (limit === result.length) return false;
+        });
+        return result;
+      }
+    }, {
+      key: "put",
+      value: function put(data) {
+        var _private$get3 = _private$1.get(this),
+            btree = _private$get3.btree;
+
+        return btree.put(data);
+      }
+    }, {
+      key: "replace",
+      value: function replace(oldData, newData) {
+        var _private$get4 = _private$1.get(this),
+            btree = _private$get4.btree;
+
+        if (btree.remove(oldData)) {
+          btree.put(newData);
+        }
+      }
+    }, {
+      key: "remove",
+      value: function remove(data) {
+        var _private$get5 = _private$1.get(this),
+            btree = _private$get5.btree;
+
+        return btree.remove(data);
+      }
+    }, {
+      key: "clear",
+      value: function clear() {
+        var _private$get6 = _private$1.get(this),
+            btree = _private$get6.btree;
+
+        return btree.clear();
+      }
+    }, {
+      key: "calculateScore",
+      value: function calculateScore(query) {
+        var options = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : {};
+        var score = 0;
+
+        if (_typeof_1(options) === 'object' && options !== null) {
+          var relatedColumns = query.getRelatedColumns();
+          var indexedColumns = this.columns.map(function (col) {
+            return col.replace(/^--/, '');
+          });
+          var weight = 1.0;
+
+          for (var j in indexedColumns) {
+            var indexedColumn = indexedColumns[j];
+
+            if (relatedColumns.indexOf(indexedColumn) >= 0) {
+              score += weight;
+            } else {
+              weight *= 0.2;
+            }
+          }
+
+          if (indexedColumns.length > 0 && indexedColumns[indexedColumns.length - 1] === options.orderBy) {
+            weight += 2 * Math.sqrt(indexedColumns.length) / indexedColumns.length;
+          }
+        }
+
+        return score;
+      } // async replace(newIndexes) {
+      //   const addedIndexKeys = [];
+      //   const removedIndexKeys = [];
+      //   const compareKey = (a, b) => a.localeCompare(b);
+      //   const currentIndexKeys = this.indexes.map(idx => this.indexToKey(idx)).sort(compareKey);
+      //   const newIndexKeys = newIndexes.map(idx => this.indexToKey(idx)).sort(compareKey);
+      //   let currentIndexCursor = 0;
+      //   let newIndexCursor = 0;
+      //   while (currentIndexCursor < currentIndexKeys.length || newIndexCursor < newIndexKeys.length) {
+      //     const currentIndexKey = currentIndexKeys[currentIndexCursor] || null;
+      //     const newIndexKey = newIndexKeys[newIndexCursor] || null;
+      //     if (currentIndexKey && newIndexKey) {
+      //       const compared = compareKey(currentIndexKey, newIndexKey);
+      //       if (compared === 0) { // equal > skip
+      //         currentIndexCursor++;
+      //         newIndexCursor++;
+      //       } else if (compared > 0) { // current is greater than new > add new
+      //         addedIndexKeys.push(newIndexKey);
+      //         newIndexCursor++;
+      //       } else { // new is greater than current > remove current
+      //         removedIndexKeys.push(currentIndexKey);
+      //         currentIndexCursor++;
+      //       }
+      //     } else if (currentIndexKey) { // current is spare > remove current
+      //       removedIndexKeys.push(currentIndexKey);
+      //       currentIndexCursor++;
+      //     } else if (newIndexKey) { // new is spare > add new
+      //       addedIndexKeys.push(newIndexKey);
+      //       newIndexCursor++;
+      //     }
+      //   }
+      //   this.indexes = newIndexes;
+      // }
+
+    }, {
+      key: "collectionName",
+      get: function get() {
+        var _private$get7 = _private$1.get(this),
+            collectionName = _private$get7.collectionName;
+
+        return collectionName;
+      }
+    }, {
+      key: "key",
+      get: function get() {
+        return this.columns.join('>');
+      }
+    }, {
+      key: "columns",
+      get: function get() {
+        var _private$get8 = _private$1.get(this),
+            columns = _private$get8.columns;
+
+        return columns;
+      }
+    }]);
+
+    return EsperIndexer;
+  }();
+
+  function libIndexerTest () {
+    var DATA_COUNT = 100;
+    var RANGE = 20;
+    var indexer = null;
+    describe('indexer', function () {
+      this.timeout(config.timeout);
+      var seed = 0;
+      var data = [];
+
+      for (var i = 0; i < DATA_COUNT; i++) {
+        var a = parseInt(RANGE * Math.random()) % RANGE;
+        var b = parseInt(RANGE * Math.random()) % RANGE;
+        var x = {
+          pk: "k_".concat(++seed),
+          a: a,
+          b: b
+        };
+        data.push(x);
+      }
+
+      var sorted = [].concat(data).sort(function (x, y) {
+        return x.a === y.a ? y.b - x.b : x.a - y.a;
+      });
+      before(function (done) {
+        indexer = new EsperIndexer({
+          collectionName: 'TestCollection',
+          primaryKey: 'pk',
+          columns: ['a', '--b']
+        });
+        done();
+      });
+      after(function (done) {
+        indexer.clear();
+        done();
+      });
+      it('put > search', function (done) {
+        data.forEach(function (v) {
+          indexer.put(v);
+        });
+        var item = indexer.search(data[0]);
+        assert.isNotNull(item);
+        assert.equal(item.pk, data[0].pk);
+        assert.equal(item.a, data[0].a);
+        assert.equal(item.b, data[0].b);
+        done();
+      });
+      it('put > iterate', function (done) {
+        data.forEach(function (v) {
+          indexer.put(v);
+        });
+        var index = sorted.map(function (x) {
+          return x.pk;
+        }).indexOf(data[0].pk);
+        var list = indexer.iterate({
+          a: data[0].a,
+          b: data[0].b
+        });
+        assert.sameOrderedMembers(list.map(function (x) {
+          return x.pk;
+        }), sorted.slice(index).map(function (x) {
+          return x.pk;
+        }));
+        done();
+      });
+      it('put > iterate limit', function (done) {
+        data.forEach(function (v) {
+          indexer.put(v);
+        });
+        var index = sorted.map(function (x) {
+          return x.pk;
+        }).indexOf(data[0].pk);
+        var limit = 5;
+        var list = indexer.iterate({
+          a: data[0].a,
+          b: data[0].b
+        }, limit);
+        assert.sameOrderedMembers(list.map(function (x) {
+          return x.pk;
+        }), sorted.slice(index, index + limit).map(function (x) {
+          return x.pk;
+        }));
+        done();
+      });
+      it('put > replace > search old', function (done) {
+        data.forEach(function (v) {
+          indexer.put(v);
+        });
+        var newData = {
+          pk: data[0].pk,
+          a: parseInt(RANGE * Math.random()) % RANGE,
+          b: parseInt(RANGE * Math.random()) % RANGE
+        };
+        indexer.replace(data[0], newData);
+        var item = indexer.search(data[0]);
+        assert.isNull(item);
+        done();
+      });
+      it.only('put > replace > search new', function (done) {
+        data.forEach(function (v) {
+          indexer.put(v);
+        });
+        var newData = {
+          pk: data[0].pk,
+          a: parseInt(RANGE * Math.random()) % RANGE,
+          b: parseInt(RANGE * Math.random()) % RANGE
+        };
+        indexer.replace(data[0], newData);
+        var item = indexer.search(newData);
+        assert.isNotNull(item);
+        assert.equal(item.pk, newData.pk);
+        assert.equal(item.a, newData.a);
+        assert.equal(item.b, newData.b);
+        done();
+      });
+      it('put > remove > search', function (done) {
+        data.forEach(function (v) {
+          indexer.put(v);
+        });
+        indexer.remove(data[0]);
+        var item = indexer.search(data[0]);
+        assert.isNull(item);
+        done();
+      });
+      it('put > clear > search', function (done) {
+        data.forEach(function (v) {
+          indexer.put(v);
+        });
+        indexer.clear();
+        var item = indexer.search(data[0]);
+        assert.isNull(item);
+        done();
+      });
+    });
+  }
+
   function kernelTest () {
     describe('kernel', function () {
       libBtreeTest();
+      libIndexerTest();
     });
   }
 

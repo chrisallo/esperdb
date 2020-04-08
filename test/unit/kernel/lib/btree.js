@@ -1,4 +1,5 @@
 
+import config from '../../../config';
 import EsperBtree from '../../../../src/kernel/lib/btree';
 
 export default function () {
@@ -8,7 +9,7 @@ export default function () {
   const RANGE = 5000;
 
   describe('btree non-unique', function () {
-    this.timeout(60000);
+    this.timeout(config.timeout);
 
     let seed = 0;
     const data = [];
@@ -52,7 +53,7 @@ export default function () {
       bt.clear();
       done();
     });
-    it('add > iterateAll', function (done) {
+    it('put > iterateAll', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -68,7 +69,7 @@ export default function () {
       }
       done();
     });
-    it('add > iterateAll break', function (done) {
+    it('put > iterateAll break', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -86,7 +87,7 @@ export default function () {
       }
       done();
     });
-    it('add > iterateFrom match top', function (done) {
+    it('put > iterateFrom match top', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -104,7 +105,7 @@ export default function () {
       }
       done();
     });
-    it('add > iterateFrom not match top', function (done) {
+    it('put > iterateFrom not match top', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -122,7 +123,7 @@ export default function () {
       }
       done();
     });
-    it('add > iterateFrom match middle', function (done) {
+    it('put > iterateFrom match middle', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -140,7 +141,7 @@ export default function () {
       }
       done();
     });
-    it('add > iterateFrom not match middle', function (done) {
+    it('put > iterateFrom not match middle', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -158,7 +159,7 @@ export default function () {
       }
       done();
     });
-    it('add > iterateFrom match bottom', function (done) {
+    it('put > iterateFrom match bottom', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -176,7 +177,7 @@ export default function () {
       }
       done();
     });
-    it('add > iterateFrom not match bottom', function (done) {
+    it('put > iterateFrom not match bottom', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -194,7 +195,7 @@ export default function () {
       }
       done();
     });
-    it('add > iterateFrom not match exceed bottom', function (done) {
+    it('put > iterateFrom not match exceed bottom', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -207,7 +208,7 @@ export default function () {
       assert.sameMembers([], list);
       done();
     });
-    it('add > iterateFrom match break', function (done) {
+    it('put > iterateFrom match break', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -227,7 +228,7 @@ export default function () {
       }
       done();
     });
-    it('add > iterateFrom not match break', function (done) {
+    it('put > iterateFrom not match break', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -247,7 +248,7 @@ export default function () {
       }
       done();
     });
-    it('add > update > iterateAll', function (done) {
+    it('put > update > iterateAll', function (done) {
       data.forEach(v => {
         bt.put(v);
       });
@@ -273,7 +274,7 @@ export default function () {
       }
       done();
     });
-    it('add > remove > iterateAll', function (done) {
+    it('put > remove > iterateAll', function (done) {
       data.forEach(v => {
         bt.put(v);
       });
@@ -292,7 +293,7 @@ export default function () {
       }
       done();
     });
-    it('add > remove > re-add > iterateAll', function (done) {
+    it('put > remove > re-put > iterateAll', function (done) {
       data.forEach(v => {
         bt.put(v);
       });
@@ -365,7 +366,7 @@ export default function () {
       bt.clear();
       done();
     });
-    it('add > iterateAll', function (done) {
+    it('put > iterateAll', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -381,7 +382,7 @@ export default function () {
       }
       done();
     });
-    it('add > iterateAll break', function (done) {
+    it('put > iterateAll break', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -399,7 +400,7 @@ export default function () {
       }
       done();
     });
-    it('add > iterateFrom match top', function (done) {
+    it('put > iterateFrom match top', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -417,7 +418,7 @@ export default function () {
       }
       done();
     });
-    it('add > iterateFrom not match top', function (done) {
+    it('put > iterateFrom not match top', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -435,7 +436,7 @@ export default function () {
       }
       done();
     });
-    it('add > iterateFrom match middle', function (done) {
+    it('put > iterateFrom match middle', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -453,7 +454,7 @@ export default function () {
       }
       done();
     });
-    it('add > iterateFrom not match middle', function (done) {
+    it('put > iterateFrom not match middle', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -471,7 +472,7 @@ export default function () {
       }
       done();
     });
-    it('add > iterateFrom match bottom', function (done) {
+    it('put > iterateFrom match bottom', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -489,7 +490,7 @@ export default function () {
       }
       done();
     });
-    it('add > iterateFrom not match bottom', function (done) {
+    it('put > iterateFrom not match bottom', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -507,7 +508,7 @@ export default function () {
       }
       done();
     });
-    it('add > iterateFrom not match exceed bottom', function (done) {
+    it('put > iterateFrom not match exceed bottom', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -521,7 +522,7 @@ export default function () {
       assert.sameMembers([], list);
       done();
     });
-    it('add > iterateFrom match break', function (done) {
+    it('put > iterateFrom match break', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -541,7 +542,7 @@ export default function () {
       }
       done();
     });
-    it('add > iterateFrom not match break', function (done) {
+    it('put > iterateFrom not match break', function (done) {
       data.forEach(value => {
         bt.put(value);
       });
@@ -561,7 +562,7 @@ export default function () {
       }
       done();
     });
-    it('add > update > iterateAll', function (done) {
+    it('put > update > iterateAll', function (done) {
       data.forEach(v => {
         bt.put(v);
       });
@@ -587,7 +588,7 @@ export default function () {
       }
       done();
     });
-    it('add > remove > iterateAll', function (done) {
+    it('put > remove > iterateAll', function (done) {
       data.forEach(v => {
         bt.put(v);
       });
@@ -609,7 +610,7 @@ export default function () {
       }
       done();
     });
-    it('add > remove > re-add > iterateAll', function (done) {
+    it('put > remove > re-put > iterateAll', function (done) {
       data.forEach(v => {
         bt.put(v);
       });

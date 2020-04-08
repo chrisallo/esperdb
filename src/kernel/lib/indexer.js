@@ -6,7 +6,7 @@ const DEFAULT_MIN_ITEMS = 3;
 
 const _private = new WeakMap();
 
-export default class EsperIndexer {
+class EsperIndexer {
   constructor({
     collectionName = '',
     primaryKey = null,
@@ -14,33 +14,35 @@ export default class EsperIndexer {
   }) {
     _private.set(this, {
       collectionName,
+      primaryKey,
       columns,
       btree: new EsperBtree({
         order: DEFAULT_BTREE_ORDER,
         min: DEFAULT_MIN_ITEMS,
         primaryKey,
+        unique: primaryKey
+          && columns.length === 1
+          && columns[0] === primaryKey,
         compare: (a, b) => {
           for (let i in this.columns) {
             const col = this.columns[i].replace(REVERSE_MARKER, '');
             const rev = REVERSE_MARKER.test(this.columns[i]) ? -1 : 1;
-            const ta = typeof a, tb = typeof b, va = a[col], vb = b[col];
+            const ta = typeof a[col], tb = typeof b[col], va = a[col], vb = b[col];
             if (ta === tb) {
               if (va !== vb) {
                 switch (ta) {
                   case 'boolean': return va ? rev : -rev;
                   case 'number': return va > vb ? rev : -rev;
                   case 'string': return va.localeCompare(vb) > 0 ? rev : -rev;
-                  case 'object': return rev;
-                  case 'function': return rev;
-                  default: return rev;
+                  default: return rev; // object, function, etc
                 }
               }
             } else {
               if (ta === 'undefined' || va === null) return -rev;
               else if (tb === 'undefined' || vb === null) return rev;
             }
-            return 0;
           }
+          return 0;
         }
       })
     });
@@ -56,6 +58,27 @@ export default class EsperIndexer {
     const { columns } = _private.get(this);
     return columns;
   }
+  search(query) {
+    const { primaryKey, btree } = _private.get(this);
+    let result = null;
+    btree.iterateFrom(query, item => {
+      if (item[primaryKey] === query[primaryKey]) {
+        result = item;
+      }
+      return false;
+    });
+    return result;
+  }
+  iterate(query, limit = 0) {
+    const { btree } = _private.get(this);
+    const result = [];
+    btree.iterateFrom(query, item => {
+      result.push(item);
+      if (limit === result.length)
+        return false;
+    });
+    return result;
+  }
   put(data) {
     const { btree } = _private.get(this);
     return btree.put(data);
@@ -63,12 +86,16 @@ export default class EsperIndexer {
   replace(oldData, newData) {
     const { btree } = _private.get(this);
     if (btree.remove(oldData)) {
-      btree.add(newData);
+      btree.put(newData);
     }
   }
   remove(data) {
     const { btree } = _private.get(this);
     return btree.remove(data);
+  }
+  clear() {
+    const { btree } = _private.get(this);
+    return btree.clear();
   }
   calculateScore(query, options = {}) {
     let score = 0;
@@ -127,3 +154,5 @@ export default class EsperIndexer {
   //   this.indexes = newIndexes;
   // }
 }
+
+export default EsperIndexer;
