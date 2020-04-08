@@ -34,6 +34,7 @@ export default function () {
         remained.push(data[i]);
       }
     }
+    const sorted = [...data].sort((a, b) => a - b);
 
     before(function (done) {
       bt = new Btree({ order: 50 });
@@ -43,13 +44,13 @@ export default function () {
       bt.clear();
       done();
     });
-    it('add', function (done) {
+    it('add > iterateAll', function (done) {
       data.forEach(value => {
         bt.add(value);
       });
 
       const list = [];
-      bt.iterate((n, i) => {
+      bt.iterateAll((n, i) => {
         list.push(n);
       });
       assert.sameMembers(data, list);
@@ -58,7 +59,24 @@ export default function () {
       }
       done();
     });
-    it('add > update', function (done) {
+    it('add > iterateAll break', function (done) {
+      data.forEach(value => {
+        bt.add(value);
+      });
+
+      const limit = 2000;
+      const list = [];
+      bt.iterateAll((n, i) => {
+        list.push(n);
+        if (list.length === limit) return false;
+      });
+      assert.sameMembers(sorted.slice(0, limit), list);
+      for (let i = 1; i < list.length; i++) {
+        assert.isAbove(list[i], list[i - 1]);
+      }
+      done();
+    });
+    it('add > update > iterateAll', function (done) {
       data.forEach(v => {
         bt.add(v);
       });
@@ -67,7 +85,7 @@ export default function () {
       });
 
       const list = [];
-      bt.iterate((n, i) => {
+      bt.iterateAll((n, i) => {
         list.push(n);
       });
       assert.sameMembers(data, list);
@@ -76,7 +94,7 @@ export default function () {
       }
       done();
     });
-    it('add > remove', function (done) {
+    it('add > remove > iterateAll', function (done) {
       data.forEach(v => {
         bt.add(v);
       });
@@ -85,7 +103,7 @@ export default function () {
       });
 
       const list = [];
-      bt.iterate((n, i) => {
+      bt.iterateAll((n, i) => {
         list.push(n);
       });
       assert.sameMembers(remained, list);
@@ -94,7 +112,7 @@ export default function () {
       }
       done();
     });
-    it('add > remove > re-add', function (done) {
+    it('add > remove > re-add > iterateAll', function (done) {
       data.forEach(v => {
         bt.add(v);
       });
@@ -106,10 +124,158 @@ export default function () {
       });
 
       const list = [];
-      bt.iterate((n, i) => {
+      bt.iterateAll((n, i) => {
         list.push(n);
       });
       assert.sameMembers(data, list);
+      for (let i = 1; i < list.length; i++) {
+        assert.isAbove(list[i], list[i - 1]);
+      }
+      done();
+    });
+    it('add > iterateFrom match top', function (done) {
+      data.forEach(value => {
+        bt.add(value);
+      });
+
+      const cursor = 0;
+      const list = [];
+      bt.iterateFrom(sorted[cursor], (n, i) => {
+        list.push(n);
+      });
+      assert.sameMembers(sorted.slice(cursor), list);
+      for (let i = 1; i < list.length; i++) {
+        assert.isAbove(list[i], list[i - 1]);
+      }
+      done();
+    });
+    it('add > iterateFrom not match top', function (done) {
+      data.forEach(value => {
+        bt.add(value);
+      });
+
+      const cursor = 0;
+      const list = [];
+      bt.iterateFrom(sorted[cursor] - 0.5, (n, i) => {
+        list.push(n);
+      });
+      assert.sameMembers(sorted.slice(cursor), list);
+      for (let i = 1; i < list.length; i++) {
+        assert.isAbove(list[i], list[i - 1]);
+      }
+      done();
+    });
+    it('add > iterateFrom match middle', function (done) {
+      data.forEach(value => {
+        bt.add(value);
+      });
+
+      const cursor = 20;
+      const list = [];
+      bt.iterateFrom(sorted[cursor], (n, i) => {
+        list.push(n);
+      });
+      assert.sameMembers(sorted.slice(cursor), list);
+      for (let i = 1; i < list.length; i++) {
+        assert.isAbove(list[i], list[i - 1]);
+      }
+      done();
+    });
+    it('add > iterateFrom not match middle', function (done) {
+      data.forEach(value => {
+        bt.add(value);
+      });
+
+      const cursor = 20;
+      const list = [];
+      bt.iterateFrom(sorted[cursor] - 0.5, (n, i) => {
+        list.push(n);
+      });
+      assert.sameMembers(sorted.slice(cursor), list);
+      for (let i = 1; i < list.length; i++) {
+        assert.isAbove(list[i], list[i - 1]);
+      }
+      done();
+    });
+    it('add > iterateFrom match bottom', function (done) {
+      data.forEach(value => {
+        bt.add(value);
+      });
+
+      const cursor = data.length - 1;
+      const list = [];
+      bt.iterateFrom(sorted[cursor], (n, i) => {
+        list.push(n);
+      });
+      assert.sameMembers(sorted.slice(cursor), list);
+      for (let i = 1; i < list.length; i++) {
+        assert.isAbove(list[i], list[i - 1]);
+      }
+      done();
+    });
+    it('add > iterateFrom not match bottom', function (done) {
+      data.forEach(value => {
+        bt.add(value);
+      });
+
+      const cursor = data.length - 1;
+      const list = [];
+      bt.iterateFrom(sorted[cursor] - 0.5, (n, i) => {
+        list.push(n);
+      });
+      assert.sameMembers(sorted.slice(cursor), list);
+      for (let i = 1; i < list.length; i++) {
+        assert.isAbove(list[i], list[i - 1]);
+      }
+      done();
+    });
+    it('add > iterateFrom not match exceed bottom', function (done) {
+      data.forEach(value => {
+        bt.add(value);
+      });
+
+      const cursor = data.length - 1;
+      const list = [];
+      bt.iterateFrom(sorted[cursor] + 0.5, (n, i) => {
+        list.push(n);
+      });
+      assert.sameMembers([], list);
+      for (let i = 1; i < list.length; i++) {
+        assert.isAbove(list[i], list[i - 1]);
+      }
+      done();
+    });
+    it('add > iterateFrom match break', function (done) {
+      data.forEach(value => {
+        bt.add(value);
+      });
+
+      const cursor = 20;
+      const limit = 2000;
+      const list = [];
+      bt.iterateFrom(sorted[cursor], (n, i) => {
+        list.push(n);
+        if (list.length === limit) return false;
+      });
+      assert.sameMembers(sorted.slice(cursor, limit + cursor), list);
+      for (let i = 1; i < list.length; i++) {
+        assert.isAbove(list[i], list[i - 1]);
+      }
+      done();
+    });
+    it('add > iterateFrom not match break', function (done) {
+      data.forEach(value => {
+        bt.add(value);
+      });
+
+      const cursor = 20;
+      const limit = 2000;
+      const list = [];
+      bt.iterateFrom(sorted[cursor] - 0.5, (n, i) => {
+        list.push(n);
+        if (list.length === limit) return false;
+      });
+      assert.sameMembers(sorted.slice(cursor, limit + cursor), list);
       for (let i = 1; i < list.length; i++) {
         assert.isAbove(list[i], list[i - 1]);
       }

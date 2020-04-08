@@ -162,6 +162,10 @@
   var DEFAULT_ORDER = 3;
   var DEFAULT_MIN_ITEMS = 1;
 
+  var DEFAULT_COMPARE = function DEFAULT_COMPARE(a, b) {
+    return a - b;
+  };
+
   var MIN_ORDER = 2;
   var _seed = 0;
 
@@ -172,9 +176,7 @@
           _ref$min = _ref.min,
           min = _ref$min === void 0 ? DEFAULT_MIN_ITEMS : _ref$min,
           _ref$compare = _ref.compare,
-          compare = _ref$compare === void 0 ? function (a, b) {
-        return a - b;
-      } : _ref$compare;
+          compare = _ref$compare === void 0 ? DEFAULT_COMPARE : _ref$compare;
 
       classCallCheck(this, BtreeNode);
 
@@ -450,22 +452,76 @@
     }
 
     createClass(Btree, [{
+      key: "iterateFrom",
+      value: function iterateFrom(data, handler) {
+        var index = 0;
+
+        var _private$get = _private.get(this),
+            root = _private$get.root;
+
+        var stack = [root];
+
+        while (stack.length > 0) {
+          var val = stack.pop();
+
+          if (val instanceof BtreeNode) {
+            var _val$placeOf = val.placeOf(data),
+                _val$placeOf2 = slicedToArray(_val$placeOf, 2),
+                _index2 = _val$placeOf2[0],
+                match = _val$placeOf2[1];
+
+            for (var i = val.children.length - 1; i > _index2; i--) {
+              if (i < val.values.length) stack.push(val.values[i]);
+              if (val.children[i]) stack.push(val.children[i]);
+            }
+
+            if (_index2 < val.values.length) stack.push(val.values[_index2]);
+            if (val.children[_index2] && !match) stack.push(val.children[_index2]);
+          } else {
+            if (handler(val, index++) === false) break;
+          }
+        }
+      }
+    }, {
+      key: "iterateAll",
+      value: function iterateAll(handler) {
+        var index = 0;
+
+        var _private$get2 = _private.get(this),
+            root = _private$get2.root;
+
+        var stack = [root];
+
+        while (stack.length > 0) {
+          var val = stack.pop();
+
+          if (val instanceof BtreeNode) {
+            for (var i = val.children.length - 1; i >= 0; i--) {
+              if (i < val.values.length) stack.push(val.values[i]);
+              if (val.children[i]) stack.push(val.children[i]);
+            }
+          } else {
+            if (handler(val, index++) === false) break;
+          }
+        }
+      }
+    }, {
       key: "add",
       value: function add(val) {
         // => inserted: boolean
-        var _private$get = _private.get(this),
-            root = _private$get.root;
+        var _private$get3 = _private.get(this),
+            root = _private$get3.root;
 
         var node = root;
 
         while (!node.leaf) {
           var _node$placeOf = node.placeOf(val),
               _node$placeOf2 = slicedToArray(_node$placeOf, 2),
-              _index2 = _node$placeOf2[0],
+              _index3 = _node$placeOf2[0],
               _match = _node$placeOf2[1];
 
           if (_match) return false;
-          node = node.children[_index2];
+          node = node.children[_index3];
         }
 
         var _node$placeOf3 = node.placeOf(val),
@@ -487,27 +543,27 @@
       key: "remove",
       value: function remove(val) {
         // => removed: boolean
-        var _private$get2 = _private.get(this),
-            root = _private$get2.root;
+        var _private$get4 = _private.get(this),
+            root = _private$get4.root;
 
         var node = root;
 
         while (!node.leaf) {
           var _node$placeOf5 = node.placeOf(val),
               _node$placeOf6 = slicedToArray(_node$placeOf5, 2),
-              _index3 = _node$placeOf6[0],
+              _index4 = _node$placeOf6[0],
               _match2 = _node$placeOf6[1];
 
           if (_match2) {
-            var nextLeafNode = node.children[_index3 + 1];
+            var nextLeafNode = node.children[_index4 + 1];
 
             while (!nextLeafNode.leaf) {
               nextLeafNode = nextLeafNode.children[0];
             }
 
             var swapper = nextLeafNode.values[0];
-            nextLeafNode.values[0] = node.values[_index3];
-            node.values[_index3] = swapper;
+            nextLeafNode.values[0] = node.values[_index4];
+            node.values[_index4] = swapper;
             nextLeafNode.values.splice(0, 1);
             nextLeafNode.children.splice(0, 1);
 
@@ -519,7 +575,7 @@
             return true;
           }
 
-          node = node.children[_index3];
+          node = node.children[_index4];
         }
 
         var _node$placeOf7 = node.placeOf(val),
@@ -544,8 +600,8 @@
     }, {
       key: "clear",
       value: function clear() {
-        var _private$get3 = _private.get(this),
-            root = _private$get3.root;
+        var _private$get5 = _private.get(this),
+            root = _private$get5.root;
 
         _private.set(this, {
           root: root.spawn(),
@@ -553,33 +609,10 @@
         });
       }
     }, {
-      key: "iterate",
-      value: function iterate(handler) {
-        var index = 0;
-
-        var _private$get4 = _private.get(this),
-            root = _private$get4.root;
-
-        var stack = [root];
-
-        while (stack.length > 0) {
-          var val = stack.pop();
-
-          if (val instanceof BtreeNode) {
-            for (var i = val.children.length - 1; i >= 0; i--) {
-              if (i < val.values.length) stack.push(val.values[i]);
-              if (val.children[i]) stack.push(val.children[i]);
-            }
-          } else {
-            handler(val, index++);
-          }
-        }
-      }
-    }, {
       key: "prettyprint",
       value: function prettyprint() {
-        var _private$get5 = _private.get(this),
-            root = _private$get5.root;
+        var _private$get6 = _private.get(this),
+            root = _private$get6.root;
 
         root.prettyprint();
       }
@@ -630,6 +663,9 @@
         }
       }
 
+      var sorted = [].concat(data).sort(function (a, b) {
+        return a - b;
+      });
       before(function (done) {
         bt = new Btree({
           order: 50
@@ -640,12 +676,12 @@
         bt.clear();
         done();
       });
-      it('add', function (done) {
+      it('add > iterateAll', function (done) {
         data.forEach(function (value) {
           bt.add(value);
         });
         var list = [];
-        bt.iterate(function (n, i) {
+        bt.iterateAll(function (n, i) {
           list.push(n);
         });
         assert.sameMembers(data, list);
@@ -656,18 +692,17 @@
 
         done();
       });
-      it('add > update', function (done) {
-        data.forEach(function (v) {
-          bt.add(v);
+      it('add > iterateAll break', function (done) {
+        data.forEach(function (value) {
+          bt.add(value);
         });
-        updated.forEach(function (v) {
-          bt.add(v);
-        });
+        var limit = 2000;
         var list = [];
-        bt.iterate(function (n, i) {
+        bt.iterateAll(function (n, i) {
           list.push(n);
+          if (list.length === limit) return false;
         });
-        assert.sameMembers(data, list);
+        assert.sameMembers(sorted.slice(0, limit), list);
 
         for (var _i5 = 1; _i5 < list.length; _i5++) {
           assert.isAbove(list[_i5], list[_i5 - 1]);
@@ -675,18 +710,18 @@
 
         done();
       });
-      it('add > remove', function (done) {
+      it('add > update > iterateAll', function (done) {
         data.forEach(function (v) {
           bt.add(v);
         });
-        removed.forEach(function (v) {
-          bt.remove(v);
+        updated.forEach(function (v) {
+          bt.add(v);
         });
         var list = [];
-        bt.iterate(function (n, i) {
+        bt.iterateAll(function (n, i) {
           list.push(n);
         });
-        assert.sameMembers(remained, list);
+        assert.sameMembers(data, list);
 
         for (var _i6 = 1; _i6 < list.length; _i6++) {
           assert.isAbove(list[_i6], list[_i6 - 1]);
@@ -694,7 +729,26 @@
 
         done();
       });
-      it('add > remove > re-add', function (done) {
+      it('add > remove > iterateAll', function (done) {
+        data.forEach(function (v) {
+          bt.add(v);
+        });
+        removed.forEach(function (v) {
+          bt.remove(v);
+        });
+        var list = [];
+        bt.iterateAll(function (n, i) {
+          list.push(n);
+        });
+        assert.sameMembers(remained, list);
+
+        for (var _i7 = 1; _i7 < list.length; _i7++) {
+          assert.isAbove(list[_i7], list[_i7 - 1]);
+        }
+
+        done();
+      });
+      it('add > remove > re-add > iterateAll', function (done) {
         data.forEach(function (v) {
           bt.add(v);
         });
@@ -705,13 +759,170 @@
           bt.add(v);
         });
         var list = [];
-        bt.iterate(function (n, i) {
+        bt.iterateAll(function (n, i) {
           list.push(n);
         });
         assert.sameMembers(data, list);
 
-        for (var _i7 = 1; _i7 < list.length; _i7++) {
-          assert.isAbove(list[_i7], list[_i7 - 1]);
+        for (var _i8 = 1; _i8 < list.length; _i8++) {
+          assert.isAbove(list[_i8], list[_i8 - 1]);
+        }
+
+        done();
+      });
+      it('add > iterateFrom match top', function (done) {
+        data.forEach(function (value) {
+          bt.add(value);
+        });
+        var cursor = 0;
+        var list = [];
+        bt.iterateFrom(sorted[cursor], function (n, i) {
+          list.push(n);
+        });
+        assert.sameMembers(sorted.slice(cursor), list);
+
+        for (var _i9 = 1; _i9 < list.length; _i9++) {
+          assert.isAbove(list[_i9], list[_i9 - 1]);
+        }
+
+        done();
+      });
+      it('add > iterateFrom not match top', function (done) {
+        data.forEach(function (value) {
+          bt.add(value);
+        });
+        var cursor = 0;
+        var list = [];
+        bt.iterateFrom(sorted[cursor] - 0.5, function (n, i) {
+          list.push(n);
+        });
+        assert.sameMembers(sorted.slice(cursor), list);
+
+        for (var _i10 = 1; _i10 < list.length; _i10++) {
+          assert.isAbove(list[_i10], list[_i10 - 1]);
+        }
+
+        done();
+      });
+      it('add > iterateFrom match middle', function (done) {
+        data.forEach(function (value) {
+          bt.add(value);
+        });
+        var cursor = 20;
+        var list = [];
+        bt.iterateFrom(sorted[cursor], function (n, i) {
+          list.push(n);
+        });
+        assert.sameMembers(sorted.slice(cursor), list);
+
+        for (var _i11 = 1; _i11 < list.length; _i11++) {
+          assert.isAbove(list[_i11], list[_i11 - 1]);
+        }
+
+        done();
+      });
+      it('add > iterateFrom not match middle', function (done) {
+        data.forEach(function (value) {
+          bt.add(value);
+        });
+        var cursor = 20;
+        var list = [];
+        bt.iterateFrom(sorted[cursor] - 0.5, function (n, i) {
+          list.push(n);
+        });
+        assert.sameMembers(sorted.slice(cursor), list);
+
+        for (var _i12 = 1; _i12 < list.length; _i12++) {
+          assert.isAbove(list[_i12], list[_i12 - 1]);
+        }
+
+        done();
+      });
+      it('add > iterateFrom match bottom', function (done) {
+        data.forEach(function (value) {
+          bt.add(value);
+        });
+        var cursor = data.length - 1;
+        var list = [];
+        bt.iterateFrom(sorted[cursor], function (n, i) {
+          list.push(n);
+        });
+        assert.sameMembers(sorted.slice(cursor), list);
+
+        for (var _i13 = 1; _i13 < list.length; _i13++) {
+          assert.isAbove(list[_i13], list[_i13 - 1]);
+        }
+
+        done();
+      });
+      it('add > iterateFrom not match bottom', function (done) {
+        data.forEach(function (value) {
+          bt.add(value);
+        });
+        var cursor = data.length - 1;
+        var list = [];
+        bt.iterateFrom(sorted[cursor] - 0.5, function (n, i) {
+          list.push(n);
+        });
+        assert.sameMembers(sorted.slice(cursor), list);
+
+        for (var _i14 = 1; _i14 < list.length; _i14++) {
+          assert.isAbove(list[_i14], list[_i14 - 1]);
+        }
+
+        done();
+      });
+      it('add > iterateFrom not match exceed bottom', function (done) {
+        data.forEach(function (value) {
+          bt.add(value);
+        });
+        var cursor = data.length - 1;
+        var list = [];
+        bt.iterateFrom(sorted[cursor] + 0.5, function (n, i) {
+          list.push(n);
+        });
+        assert.sameMembers([], list);
+
+        for (var _i15 = 1; _i15 < list.length; _i15++) {
+          assert.isAbove(list[_i15], list[_i15 - 1]);
+        }
+
+        done();
+      });
+      it('add > iterateFrom match break', function (done) {
+        data.forEach(function (value) {
+          bt.add(value);
+        });
+        var cursor = 20;
+        var limit = 2000;
+        var list = [];
+        bt.iterateFrom(sorted[cursor], function (n, i) {
+          list.push(n);
+          if (list.length === limit) return false;
+        });
+        assert.sameMembers(sorted.slice(cursor, limit + cursor), list);
+
+        for (var _i16 = 1; _i16 < list.length; _i16++) {
+          assert.isAbove(list[_i16], list[_i16 - 1]);
+        }
+
+        done();
+      });
+      it('add > iterateFrom not match break', function (done) {
+        data.forEach(function (value) {
+          bt.add(value);
+        });
+        var cursor = 20;
+        var limit = 2000;
+        var list = [];
+        bt.iterateFrom(sorted[cursor] - 0.5, function (n, i) {
+          list.push(n);
+          if (list.length === limit) return false;
+        });
+        assert.sameMembers(sorted.slice(cursor, limit + cursor), list);
+
+        for (var _i17 = 1; _i17 < list.length; _i17++) {
+          assert.isAbove(list[_i17], list[_i17 - 1]);
         }
 
         done();

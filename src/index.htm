@@ -9,8 +9,8 @@
 <body>
   <script src='./kernel/lib/btree.js'></script>
   <script>
-    const count = 100000;
-    const removeCount = 80000;
+    const count = 200;
+    const removeCount = 40;
     const range = 10000000;
 
     /// init add testset
@@ -21,7 +21,7 @@
     }
 
     /// init btree
-    const bt = new Btree({ order: 50 });
+    const bt = new Btree({ order: 5 });
 
     /// add
     let tsmp = new Date().getTime();
@@ -30,43 +30,51 @@
     }
     console.log(`add ${new Date().getTime() - tsmp}ms`);
 
-    /// iterate
-    tsmp = new Date().getTime();
-    const list = [];
-    bt.iterate((n, i) => {
-      list.push(n);
+    bt.prettyprint();
+    const sorted = [...data].sort((a, b) => a - b);
+    const cursor = sorted[50] + 0.5;
+    console.log('cursor', cursor);
+    bt.iterateFrom(cursor, (n, i) => {
+      console.log(n, i);
     });
-    console.log(`iterate ${new Date().getTime() - tsmp}ms`);
-    // console.log('list', bt.count, list);
 
-    // bt.prettyprint();
+    // /// iterate
+    // tsmp = new Date().getTime();
+    // const list = [];
+    // bt.iterate((n, i) => {
+    //   list.push(n);
+    // });
+    // console.log(`iterate ${new Date().getTime() - tsmp}ms`);
+    // // console.log('list', bt.count, list);
 
-    /// init remove testset
-    const removes = [...data];
-    for (let i = 0; i < data.length - removeCount; i++) {
-      const index = parseInt(range * Math.random()) % removes.length;
-      removes.splice(index, 1);
-    }
-    removes.sort(() => Math.random() - 0.5);
-    // console.log('removes', removes);
+    // // bt.prettyprint();
 
-    /// remove
-    tsmp = new Date().getTime();
-    let actuallyRemoved = 0;
-    for (let i in removes) {
-      if (bt.remove(removes[i]))
-        actuallyRemoved++;
-    }
-    console.log(`remove ${new Date().getTime() - tsmp}ms`);
+    // /// init remove testset
+    // const removes = [...data];
+    // for (let i = 0; i < data.length - removeCount; i++) {
+    //   const index = parseInt(range * Math.random()) % removes.length;
+    //   removes.splice(index, 1);
+    // }
+    // removes.sort(() => Math.random() - 0.5);
+    // // console.log('removes', removes);
 
-    /// iterate after remove
-    const listAfterRemove = [];
-    bt.iterate((n, i) => {
-      listAfterRemove.push(n);
-    });
-    // console.log('listAfterRemove', bt.count, listAfterRemove);
-    // bt.prettyprint();
-    console.log(`total ${list.length} - removes ${actuallyRemoved} = result ${list.length - actuallyRemoved} (${listAfterRemove.length})`);
+    // /// remove
+    // tsmp = new Date().getTime();
+    // let actuallyRemoved = 0;
+    // for (let i in removes) {
+    //   if (bt.remove(removes[i]))
+    //     actuallyRemoved++;
+    // }
+    // console.log(`remove ${new Date().getTime() - tsmp}ms`);
+
+    // /// iterate after remove
+    // const listAfterRemove = [];
+    // bt.iterate((n, i) => {
+    //   listAfterRemove.push(n);
+    // });
+    // // console.log('listAfterRemove', bt.count, listAfterRemove);
+    // // bt.prettyprint();
+    // console.log(`total ${list.length} - removes ${actuallyRemoved} = result ${list.length - actuallyRemoved} (${listAfterRemove.length})`);
   </script>
 </body>
 

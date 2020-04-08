@@ -10,7 +10,7 @@ class BtreeNode {
   constructor({
     order = DEFAULT_ORDER,
     min = DEFAULT_MIN_ITEMS,
-    compare = (a, b) => a - b
+    compare = DEFAULT_COMPARE
   }) {
     this._nid = ++_seed;
     this.options = { order, min, compare };
@@ -198,6 +198,41 @@ class Btree {
   get count() {
     return _private.get(this).count;
   }
+  iterateFrom(data, handler) {
+    let index = 0;
+    const { root } = _private.get(this);
+    const stack = [root];
+    while (stack.length > 0) {
+      const val = stack.pop();
+      if (val instanceof BtreeNode) {
+        const [index, match] = val.placeOf(data);
+        for (let i = val.children.length - 1; i > index; i--) {
+          if (i < val.values.length) stack.push(val.values[i]);
+          if (val.children[i]) stack.push(val.children[i]);
+        }
+        if (index < val.values.length) stack.push(val.values[index]);
+        if (val.children[index] && !match) stack.push(val.children[index]);
+      } else {
+        if (handler(val, index++) === false) break;
+      }
+    }
+  }
+  iterateAll(handler) {
+    let index = 0;
+    const { root } = _private.get(this);
+    const stack = [root];
+    while (stack.length > 0) {
+      const val = stack.pop();
+      if (val instanceof BtreeNode) {
+        for (let i = val.children.length - 1; i >= 0; i--) {
+          if (i < val.values.length) stack.push(val.values[i]);
+          if (val.children[i]) stack.push(val.children[i]);
+        }
+      } else {
+        if (handler(val, index++) === false) break;
+      }
+    }
+  }
   add(val) { // => inserted: boolean
     const { root } = _private.get(this);
     let node = root;
@@ -259,22 +294,6 @@ class Btree {
       root: root.spawn(),
       count: 0
     });
-  }
-  iterate(handler) {
-    let index = 0;
-    const { root } = _private.get(this);
-    const stack = [root];
-    while (stack.length > 0) {
-      const val = stack.pop();
-      if (val instanceof BtreeNode) {
-        for (let i = val.children.length - 1; i >= 0; i--) {
-          if (i < val.values.length) stack.push(val.values[i]);
-          if (val.children[i]) stack.push(val.children[i]);
-        }
-      } else {
-        handler(val, index++);
-      }
-    }
   }
   prettyprint() {
     const { root } = _private.get(this);
