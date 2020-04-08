@@ -212,7 +212,8 @@ export default function () {
         bt.put(value);
       });
 
-      const cursor = sorted.map(d => d.n).indexOf(10);
+      const middle = sorted[2].n;
+      const cursor = sorted.map(d => d.n).indexOf(middle);
       const limit = 2000;
       const list = [];
       bt.iterateFrom(sorted[cursor], (x, i) => {
@@ -231,7 +232,8 @@ export default function () {
         bt.put(value);
       });
 
-      const cursor = sorted.map(d => d.n).indexOf(10);
+      const middle = sorted[2].n;
+      const cursor = sorted.map(d => d.n).indexOf(middle);
       const limit = 2000;
       const list = [];
       bt.iterateFrom({ n: sorted[cursor].n - 0.5 }, (x, i) => {
@@ -524,7 +526,8 @@ export default function () {
         bt.put(value);
       });
 
-      const cursor = sorted.map(d => d.n).indexOf(10);
+      const middle = sorted[2].n;
+      const cursor = sorted.map(d => d.n).indexOf(middle);
       const limit = 2000;
       const list = [];
       bt.iterateFrom(sorted[cursor], (x, i) => {
@@ -543,7 +546,8 @@ export default function () {
         bt.put(value);
       });
 
-      const cursor = sorted.map(d => d.n).indexOf(10);
+      const middle = sorted[2].n;
+      const cursor = sorted.map(d => d.n).indexOf(middle);
       const limit = 2000;
       const list = [];
       bt.iterateFrom({ n: sorted[cursor].n - 0.5 }, (x, i) => {
