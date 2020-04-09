@@ -58,26 +58,26 @@ class EsperIndexer {
     const { columns } = _private.get(this);
     return columns;
   }
-  search(query) {
-    const { primaryKey, btree } = _private.get(this);
-    let result = null;
-    btree.iterateFrom(query, item => {
-      if (item[primaryKey] === query[primaryKey]) {
-        result = item;
-      }
-      return false;
-    });
-    return result;
-  }
-  iterate(query, limit = 0) {
+  iterate(query, options, handler) {
     const { btree } = _private.get(this);
-    const result = [];
+    let { skip = 0, limit = 0 } = options || {};
+    skip = Math.max(0, skip);
+    limit = Math.max(0, limit);
+
+    let count = 0;
     btree.iterateFrom(query, item => {
-      result.push(item);
-      if (limit === result.length)
-        return false;
+      if (skip === 0) {
+        if (handler) {
+          if (handler(item) === false) {
+            return false;
+          }
+        }
+        count++;
+        if (limit === count) return false;
+      } else {
+        skip--;
+      }
     });
-    return result;
   }
   put(data) {
     const { btree } = _private.get(this);

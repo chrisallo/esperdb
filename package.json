@@ -5,6 +5,7 @@
   "main": "esperdb.min.js",
   "scripts": {
     "build": "rollup -c",
+    "simulate": "./node_modules/.bin/rollup --config ./src/simulate/rollup.config.js",
     "test": "./node_modules/.bin/rollup --config ./test/rollup.config.js && ./node_modules/.bin/karma start ./test/karma.local.conf.js --debug",
     "test:w": "node_modules\\.bin\\rollup --config test/rollup.config.js && node_modules\\.bin\\karma start test/karma.local.conf.js --debug"
   },

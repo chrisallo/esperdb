@@ -346,11 +346,13 @@
               index = _this$siblings2[2];
 
           if (prev && prev.hasExtra) {
+            // shift from previous sibling
             this.values.unshift(this.parent.values[index - 1]);
             this.children.unshift(prev.children.pop());
             if (this.children[0]) this.children[0].parent = this;
             this.parent.values[index - 1] = prev.values.pop();
           } else if (next && next.hasExtra) {
+            // shift from next sibling
             this.values.push(this.parent.values[index]);
             this.children.push(next.children.shift());
 
@@ -383,6 +385,7 @@
             }
           }
         } else {
+          // if it's root, merge all the children
           this.values = toConsumableArray(this.children.map(function (c) {
             return c ? c.values : [];
           }).reduce(function (a, c) {
@@ -400,11 +403,16 @@
       }
     }, {
       key: "prettyprint",
-      value: function prettyprint() {
+      value: function prettyprint(_ref2) {
         var _console;
 
-        var depth = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : 0;
-        var prints = ["parent=".concat(this.parent ? this.parent._nid : 0), "nid=".concat(this._nid), this.values];
+        var _ref2$depth = _ref2.depth,
+            depth = _ref2$depth === void 0 ? 0 : _ref2$depth,
+            _ref2$formatter = _ref2.formatter,
+            formatter = _ref2$formatter === void 0 ? null : _ref2$formatter;
+        var prints = ["parent=".concat(this.parent ? this.parent._nid : 0), "nid=".concat(this._nid), this.values.map(function (v) {
+          return formatter ? formatter(v) : JSON.stringify(v);
+        })];
 
         if (depth) {
           prints.unshift('\t'.repeat(depth));
@@ -413,7 +421,10 @@
         (_console = console).log.apply(_console, prints);
 
         for (var i in this.children) {
-          if (this.children[i]) this.children[i].prettyprint(depth + 1);
+          if (this.children[i]) this.children[i].prettyprint({
+            depth: depth + 1,
+            formatter: formatter
+          });
         }
       }
     }, {
@@ -491,8 +502,12 @@
     }
 
     createClass(EsperBtree, [{
-      key: "iterateFrom",
-      value: function iterateFrom(data, handler) {
+      key: "_iterate",
+      value: function _iterate(_ref3) {
+        var _ref3$data = _ref3.data,
+            data = _ref3$data === void 0 ? null : _ref3$data,
+            _ref3$handler = _ref3.handler,
+            handler = _ref3$handler === void 0 ? null : _ref3$handler;
         var index = 0;
 
         var _private$get = _private.get(this),
@@ -504,56 +519,48 @@
           var val = stack.pop();
 
           if (val instanceof EsperBtreeNode) {
-            var _val$placeOf = val.placeOf(data),
-                _val$placeOf2 = slicedToArray(_val$placeOf, 2),
-                _index2 = _val$placeOf2[0],
-                match = _val$placeOf2[1];
+            var node = val;
 
-            for (var i = val.children.length - 1; i > _index2; i--) {
-              if (i < val.values.length) stack.push(val.values[i]);
-              if (val.children[i]) stack.push(val.children[i]);
+            var _ref4 = data ? node.placeOf(data) : [0, false],
+                _ref5 = slicedToArray(_ref4, 2),
+                _index2 = _ref5[0],
+                _ = _ref5[1];
+
+            for (var i = node.children.length - 1; i >= _index2; i--) {
+              if (i < node.values.length) stack.push(node.values[i]);
+              stack.push(node.children[i]);
             }
-
-            if (_index2 < val.values.length) stack.push(val.values[_index2]);
-            if (val.children[_index2] && !match) stack.push(val.children[_index2]);
           } else if (Array.isArray(val)) {
-            for (var _i in val) {
-              if (handler(val[_i], index++) === false) return;
+            if (handler) {
+              for (var _i = 0; _i < val.length; _i++) {
+                if (handler(val[_i], index++) === false) return;
+              }
             }
           }
         }
       }
     }, {
+      key: "iterateFrom",
+      value: function iterateFrom(data, handler) {
+        this._iterate({
+          data: data,
+          handler: handler
+        });
+      }
+    }, {
       key: "iterateAll",
       value: function iterateAll(handler) {
-        var index = 0;
-
-        var _private$get2 = _private.get(this),
-            root = _private$get2.root;
-
-        var stack = [root];
-
-        while (stack.length > 0) {
-          var val = stack.pop();
-
-          if (val instanceof EsperBtreeNode) {
-            for (var i = val.children.length - 1; i >= 0; i--) {
-              if (i < val.values.length) stack.push(val.values[i]);
-              if (val.children[i]) stack.push(val.children[i]);
-            }
-          } else if (Array.isArray(val)) {
-            for (var _i2 in val) {
-              if (handler(val[_i2], index++) === false) return;
-            }
-          }
-        }
+        this._iterate({
+          data: null,
+          handler: handler
+        });
       }
     }, {
       key: "put",
       value: function put(val) {
         // => inserted: boolean
-        var _private$get3 = _private.get(this),
-            root = _private$get3.root;
+        var _private$get2 = _private.get(this),
+            root = _private$get2.root;
 
         var node = root;
 
@@ -618,8 +625,8 @@
       key: "remove",
       value: function remove(val) {
         // => removed: boolean
-        var _private$get4 = _private.get(this),
-            root = _private$get4.root;
+        var _private$get3 = _private.get(this),
+            root = _private$get3.root;
 
         var node = root;
 
@@ -686,8 +693,8 @@
     }, {
       key: "clear",
       value: function clear() {
-        var _private$get5 = _private.get(this),
-            root = _private$get5.root;
+        var _private$get4 = _private.get(this),
+            root = _private$get4.root;
 
         _private.set(this, {
           root: root.spawn(),
@@ -697,10 +704,15 @@
     }, {
       key: "prettyprint",
       value: function prettyprint() {
-        var _private$get6 = _private.get(this),
-            root = _private$get6.root;
+        var formatter = arguments.length > 0 && arguments[0] !== undefined ? arguments[0] : null;
 
-        root.prettyprint();
+        var _private$get5 = _private.get(this),
+            root = _private$get5.root;
+
+        root.prettyprint({
+          depth: 0,
+          formatter: formatter
+        });
       }
     }, {
       key: "unique",
@@ -724,7 +736,7 @@
     var ADD_COUNT = 10000;
     var UPDATE_COUNT = 2500;
     var REMOVE_COUNT = 2000;
-    var RANGE = 5000;
+    var RANGE = 1000;
     describe('btree non-unique', function () {
       this.timeout(config.timeout);
       var seed = 0;
@@ -733,7 +745,7 @@
       for (var i = 0; i < ADD_COUNT; i++) {
         var n = parseInt(RANGE * Math.random()) % RANGE;
         var x = {
-          k: "k_".concat(++seed),
+          k: ++seed,
           n: n
         };
         data.push(x);
@@ -763,7 +775,7 @@
       }
 
       var sorted = [].concat(data).sort(function (a, b) {
-        return a.n - b.n;
+        return a.n === b.n ? a.k - b.k : a.n - b.n;
       });
       var bt = null;
       before(function (done) {
@@ -777,7 +789,7 @@
         });
         done();
       });
-      beforeEach(function (done) {
+      afterEach(function (done) {
         bt.clear();
         done();
       });
@@ -1649,50 +1661,48 @@
     }
 
     createClass(EsperIndexer, [{
-      key: "search",
-      value: function search(query) {
+      key: "iterate",
+      value: function iterate(query, options, handler) {
         var _private$get = _private$1.get(this),
-            primaryKey = _private$get.primaryKey,
             btree = _private$get.btree;
 
-        var result = null;
+        var _ref2 = options || {},
+            _ref2$skip = _ref2.skip,
+            skip = _ref2$skip === void 0 ? 0 : _ref2$skip,
+            _ref2$limit = _ref2.limit,
+            limit = _ref2$limit === void 0 ? 0 : _ref2$limit;
+
+        skip = Math.max(0, skip);
+        limit = Math.max(0, limit);
+        var count = 0;
         btree.iterateFrom(query, function (item) {
-          if (item[primaryKey] === query[primaryKey]) {
-            result = item;
+          if (skip === 0) {
+            if (handler) {
+              if (handler(item) === false) {
+                return false;
+              }
+            }
+
+            count++;
+            if (limit === count) return false;
+          } else {
+            skip--;
           }
-
-          return false;
         });
-        return result;
-      }
-    }, {
-      key: "iterate",
-      value: function iterate(query) {
-        var limit = arguments.length > 1 && arguments[1] !== undefined ? arguments[1] : 0;
-
-        var _private$get2 = _private$1.get(this),
-            btree = _private$get2.btree;
-
-        var result = [];
-        btree.iterateFrom(query, function (item) {
-          result.push(item);
-          if (limit === result.length) return false;
-        });
-        return result;
       }
     }, {
       key: "put",
       value: function put(data) {
-        var _private$get3 = _private$1.get(this),
-            btree = _private$get3.btree;
+        var _private$get2 = _private$1.get(this),
+            btree = _private$get2.btree;
 
         return btree.put(data);
       }
     }, {
       key: "replace",
       value: function replace(oldData, newData) {
-        var _private$get4 = _private$1.get(this),
-            btree = _private$get4.btree;
+        var _private$get3 = _private$1.get(this),
+            btree = _private$get3.btree;
 
         if (btree.remove(oldData)) {
           btree.put(newData);
@@ -1701,16 +1711,16 @@
     }, {
       key: "remove",
       value: function remove(data) {
-        var _private$get5 = _private$1.get(this),
-            btree = _private$get5.btree;
+        var _private$get4 = _private$1.get(this),
+            btree = _private$get4.btree;
 
         return btree.remove(data);
       }
     }, {
       key: "clear",
       value: function clear() {
-        var _private$get6 = _private$1.get(this),
-            btree = _private$get6.btree;
+        var _private$get5 = _private$1.get(this),
+            btree = _private$get5.btree;
 
         return btree.clear();
       }
@@ -1780,8 +1790,8 @@
     }, {
       key: "collectionName",
       get: function get() {
-        var _private$get7 = _private$1.get(this),
-            collectionName = _private$get7.collectionName;
+        var _private$get6 = _private$1.get(this),
+            collectionName = _private$get6.collectionName;
 
         return collectionName;
       }
@@ -1793,8 +1803,8 @@
     }, {
       key: "columns",
       get: function get() {
-        var _private$get8 = _private$1.get(this),
-            columns = _private$get8.columns;
+        var _private$get7 = _private$1.get(this),
+            columns = _private$get7.columns;
 
         return columns;
       }
@@ -1809,8 +1819,16 @@
     var indexer = null;
     describe('indexer', function () {
       this.timeout(config.timeout);
+      var data = []; // for (let i in raw) {
+      //   const t = raw[i].split(':');
+      //   data.push({
+      //     pk: t[0],
+      //     a: parseInt(t[1]),
+      //     b: parseInt(t[2])
+      //   });
+      // }
+
       var seed = 0;
-      var data = [];
 
       for (var i = 0; i < DATA_COUNT; i++) {
         var a = parseInt(RANGE * Math.random()) % RANGE;
@@ -1825,7 +1843,8 @@
 
       var sorted = [].concat(data).sort(function (x, y) {
         return x.a === y.a ? y.b - x.b : x.a - y.a;
-      });
+      }); // console.log(data.map(d => `${d.pk}:${d.a}:${d.b}`));
+
       before(function (done) {
         indexer = new EsperIndexer({
           collectionName: 'TestCollection',
@@ -1834,19 +1853,8 @@
         });
         done();
       });
-      after(function (done) {
+      afterEach(function (done) {
         indexer.clear();
-        done();
-      });
-      it('put > search', function (done) {
-        data.forEach(function (v) {
-          indexer.put(v);
-        });
-        var item = indexer.search(data[0]);
-        assert.isNotNull(item);
-        assert.equal(item.pk, data[0].pk);
-        assert.equal(item.a, data[0].a);
-        assert.equal(item.b, data[0].b);
         done();
       });
       it('put > iterate', function (done) {
@@ -1856,9 +1864,9 @@
         var index = sorted.map(function (x) {
           return x.pk;
         }).indexOf(data[0].pk);
-        var list = indexer.iterate({
-          a: data[0].a,
-          b: data[0].b
+        var list = [];
+        indexer.iterate(data[0], null, function (item) {
+          list.push(item);
         });
         assert.sameOrderedMembers(list.map(function (x) {
           return x.pk;
@@ -1875,13 +1883,41 @@
           return x.pk;
         }).indexOf(data[0].pk);
         var limit = 5;
-        var list = indexer.iterate({
-          a: data[0].a,
-          b: data[0].b
-        }, limit);
+        var list = [];
+        indexer.iterate(data[0], {
+          limit: limit
+        }, function (item) {
+          list.push(item);
+        });
         assert.sameOrderedMembers(list.map(function (x) {
           return x.pk;
         }), sorted.slice(index, index + limit).map(function (x) {
+          return x.pk;
+        }));
+        done();
+      });
+      it('put > iterate skip limit', function (done) {
+        data.forEach(function (v) {
+          indexer.put(v);
+        });
+        var index = sorted.map(function (x) {
+          return x.pk;
+        }).indexOf(data[0].pk);
+        var skip = 3;
+        var limit = 5;
+        var list = [];
+        indexer.iterate({
+          a: data[0].a,
+          b: data[0].b
+        }, {
+          skip: skip,
+          limit: limit
+        }, function (item) {
+          list.push(item);
+        });
+        assert.sameOrderedMembers(list.map(function (x) {
+          return x.pk;
+        }), sorted.slice(index + skip, index + limit + skip).map(function (x) {
           return x.pk;
         }));
         done();
@@ -1892,29 +1928,40 @@
         });
         var newData = {
           pk: data[0].pk,
-          a: parseInt(RANGE * Math.random()) % RANGE,
-          b: parseInt(RANGE * Math.random()) % RANGE
+          a: data[0].a + 1,
+          b: data[0].b + 1
         };
         indexer.replace(data[0], newData);
-        var item = indexer.search(data[0]);
-        assert.isNull(item);
+        indexer.iterate(data[0], null, function (item) {
+          if (item.pk === newData.pk) {
+            assert.notEqual(item.a, data[0].a);
+            assert.notEqual(item.b, data[0].b);
+            assert.equal(item.a, newData.a);
+            assert.equal(item.b, newData.b);
+            return false;
+          }
+        });
         done();
       });
-      it.only('put > replace > search new', function (done) {
+      it('put > replace > search new', function (done) {
         data.forEach(function (v) {
           indexer.put(v);
         });
         var newData = {
           pk: data[0].pk,
-          a: parseInt(RANGE * Math.random()) % RANGE,
-          b: parseInt(RANGE * Math.random()) % RANGE
+          a: data[0].a + 1,
+          b: data[0].b + 1
         };
         indexer.replace(data[0], newData);
-        var item = indexer.search(newData);
-        assert.isNotNull(item);
-        assert.equal(item.pk, newData.pk);
-        assert.equal(item.a, newData.a);
-        assert.equal(item.b, newData.b);
+        indexer.iterate(newData, null, function (item) {
+          if (item.pk === data[0].pk) {
+            assert.notEqual(item.a, data[0].a);
+            assert.notEqual(item.b, data[0].b);
+            assert.equal(item.a, newData.a);
+            assert.equal(item.b, newData.b);
+            return false;
+          }
+        });
         done();
       });
       it('put > remove > search', function (done) {
@@ -1922,8 +1969,9 @@
           indexer.put(v);
         });
         indexer.remove(data[0]);
-        var item = indexer.search(data[0]);
-        assert.isNull(item);
+        indexer.iterate(data[0], null, function (item) {
+          assert.isFalse(item.pk === data[0].pk);
+        });
         done();
       });
       it('put > clear > search', function (done) {
@@ -1931,8 +1979,9 @@
           indexer.put(v);
         });
         indexer.clear();
-        var item = indexer.search(data[0]);
-        assert.isNull(item);
+        indexer.iterate(data[0], null, function (item) {
+          assert.isFalse(item.pk === data[0].pk);
+        });
         done();
       });
     });

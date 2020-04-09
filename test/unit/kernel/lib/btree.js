@@ -6,7 +6,7 @@ export default function () {
   const ADD_COUNT = 10000;
   const UPDATE_COUNT = 2500;
   const REMOVE_COUNT = 2000;
-  const RANGE = 5000;
+  const RANGE = 1000;
 
   describe('btree non-unique', function () {
     this.timeout(config.timeout);
@@ -15,7 +15,7 @@ export default function () {
     const data = [];
     for (let i = 0; i < ADD_COUNT; i++) {
       const n = parseInt(RANGE * Math.random()) % RANGE;
-      const x = { k: `k_${++seed}`, n };
+      const x = { k: ++seed, n };
       data.push(x);
     }
     const updated = [];
@@ -36,7 +36,7 @@ export default function () {
         remained.push(data[i]);
       }
     }
-    const sorted = [...data].sort((a, b) => a.n - b.n);
+    const sorted = [...data].sort((a, b) => a.n === b.n ? a.k - b.k : a.n - b.n);
 
     let bt = null;
 
@@ -49,7 +49,7 @@ export default function () {
       });
       done();
     });
-    beforeEach(function (done) {
+    afterEach(function (done) {
       bt.clear();
       done();
     });

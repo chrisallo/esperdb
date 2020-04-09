@@ -149,11 +149,13 @@ class EsperBtreeNode {
     if (this.parent) {
       const [prev, next, index] = this.siblings;
       if (prev && prev.hasExtra) {
+        // shift from previous sibling
         this.values.unshift(this.parent.values[index - 1]);
         this.children.unshift(prev.children.pop());
         if (this.children[0]) this.children[0].parent = this;
         this.parent.values[index - 1] = prev.values.pop();
       } else if (next && next.hasExtra) {
+        // shift from next sibling
         this.values.push(this.parent.values[index]);
         this.children.push(next.children.shift());
         if (this.children[this.children.length - 1]) {
@@ -181,6 +183,7 @@ class EsperBtreeNode {
         }
       }
     } else {
+      // if it's root, merge all the children
       this.values = [
         ...this.children
           .map(c => c ? c.values : [])
@@ -194,8 +197,12 @@ class EsperBtreeNode {
       this.children.forEach(c => { if (c) c.parent = this; });
     }
   }
-  prettyprint(depth = 0) {
-    const prints = [`parent=${this.parent ? this.parent._nid : 0}`, `nid=${this._nid}`, this.values];
+  prettyprint({ depth = 0, formatter = null }) {
+    const prints = [
+      `parent=${this.parent ? this.parent._nid : 0}`,
+      `nid=${this._nid}`,
+      this.values.map(v => formatter ? formatter(v) : JSON.stringify(v))
+    ];
     if (depth) {
       prints.unshift('\t'.repeat(depth));
     }
@@ -203,7 +210,7 @@ class EsperBtreeNode {
 
     for (let i in this.children) {
       if (this.children[i])
-        this.children[i].prettyprint(depth + 1);
+        this.children[i].prettyprint({ depth: depth + 1, formatter });
     }
   }
 }
@@ -223,44 +230,37 @@ class EsperBtree {
   get count() {
     return _private.get(this).count;
   }
-  iterateFrom(data, handler) {
+  _iterate({
+    data = null,
+    handler = null
+  }) {
     let index = 0;
     const { root } = _private.get(this);
     const stack = [root];
     while (stack.length > 0) {
       const val = stack.pop();
       if (val instanceof EsperBtreeNode) {
-        const [index, match] = val.placeOf(data);
-        for (let i = val.children.length - 1; i > index; i--) {
-          if (i < val.values.length) stack.push(val.values[i]);
-          if (val.children[i]) stack.push(val.children[i]);
+        const node = val;
+        const [index, _] = data ? node.placeOf(data) : [0, false];
+
+        for (let i = node.children.length - 1; i >= index; i--) {
+          if (i < node.values.length) stack.push(node.values[i]);
+          stack.push(node.children[i]);
         }
-        if (index < val.values.length) stack.push(val.values[index]);
-        if (val.children[index] && !match) stack.push(val.children[index]);
       } else if (Array.isArray(val)) {
-        for (let i in val) {
-          if (handler(val[i], index++) === false) return;
+        if (handler) {
+          for (let i = 0; i < val.length; i++) {
+            if (handler(val[i], index++) === false) return;
+          }
         }
       }
     }
   }
+  iterateFrom(data, handler) {
+    this._iterate({ data, handler });
+  }
   iterateAll(handler) {
-    let index = 0;
-    const { root } = _private.get(this);
-    const stack = [root];
-    while (stack.length > 0) {
-      const val = stack.pop();
-      if (val instanceof EsperBtreeNode) {
-        for (let i = val.children.length - 1; i >= 0; i--) {
-          if (i < val.values.length) stack.push(val.values[i]);
-          if (val.children[i]) stack.push(val.children[i]);
-        }
-      } else if (Array.isArray(val)) {
-        for (let i in val) {
-          if (handler(val[i], index++) === false) return;
-        }
-      }
-    }
+    this._iterate({ data: null, handler });
   }
   put(val) { // => inserted: boolean
     const { root } = _private.get(this);
@@ -363,9 +363,9 @@ class EsperBtree {
       count: 0
     });
   }
-  prettyprint() {
+  prettyprint(formatter = null) {
     const { root } = _private.get(this);
-    root.prettyprint();
+    root.prettyprint({ depth: 0, formatter });
   }
 }
 
