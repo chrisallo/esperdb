@@ -11,15 +11,6 @@ export default function () {
     this.timeout(config.timeout);
 
     const data = [];
-    // for (let i in raw) {
-    //   const t = raw[i].split(':');
-    //   data.push({
-    //     pk: t[0],
-    //     a: parseInt(t[1]),
-    //     b: parseInt(t[2])
-    //   });
-    // }
-
     let seed = 0;
     for (let i = 0; i < DATA_COUNT; i++) {
       const a = parseInt(RANGE * Math.random()) % RANGE;
@@ -30,7 +21,6 @@ export default function () {
     const sorted = [...data].sort((x, y) => {
       return x.a === y.a ? y.b - x.b : x.a - y.a;
     });
-    // console.log(data.map(d => `${d.pk}:${d.a}:${d.b}`));
 
     before(function (done) {
       indexer = new EsperIndexer({
