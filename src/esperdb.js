@@ -121,7 +121,6 @@ class Esper {
     if (!_vault.error) {
       const { name, model, key, indexes = [], migrate = null } = val;
       if (typeof name === 'string' && name
-        && typeof model === 'object' && model
         && typeof key === 'string' && key
         && Array.isArray(indexes)
         && indexes.every(index =>
@@ -162,7 +161,7 @@ class Esper {
         });
         for (let name in schema) {
           const collectionStoreKey = `${ESPER_COLLECTION_PREFIX}${name}`;
-          const { model, key, indexes, migrate } = schema[name];
+          const { key, indexes, migrate } = schema[name];
 
           /// create index for primary key
           let hasDefaultIndex = false;
@@ -178,12 +177,12 @@ class Esper {
           }
 
           const collectionInfo = await store.getItem(collectionStoreKey);
-          const indexer = new EsperIndexer({
-            collectionName: name,
-            kernel,
-            indexes: collectionInfo ? collectionInfo.indexes : indexes
+          const collection = new EsperCollection({
+            name,
+            key: collectionInfo ? collectionInfo.key : key,
+            indexes: collectionInfo ? collectionInfo.indexes : indexes,
+            store
           });
-          const collection = new EsperCollection({ name, key, model, indexer, kernel });
           if (collectionInfo) {
             if (versionUpgraded) {
               if (migrate) {
@@ -195,10 +194,9 @@ class Esper {
                   }
                 }
               }
-              await indexer.replace(indexes);
             }
           }
-          await store.setItem(collectionStoreKey, { model, key, indexes });
+          await store.setItem(collectionStoreKey, { name, key, indexes });
           _vault.collection[name] = collection;
         }
         // set metadata

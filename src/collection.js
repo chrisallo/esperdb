@@ -51,10 +51,6 @@ export default class EsperCollection {
     const { key } = _privateProps.get(this);
     return key;
   }
-  get model() {
-    const { model } = _privateProps.get(this);
-    return clone(model);
-  }
   get indexes() {
     const { indexers } = _privateProps.get(this);
     return indexers.map(idxr => idxr.columns);
