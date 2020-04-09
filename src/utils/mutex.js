@@ -5,11 +5,11 @@ export default class EsperMutex {
     this.queue = [];
     this.locked = false;
   }
-  lock(routine) {
+  async lock(routine) {
     if (!this.locked) {
       this.locked = true;
       try {
-        routine(() => this.unlock());
+        await routine(() => this.unlock());
       } catch (e) {
         EsperLog.error(e.message);
         this.unlock();

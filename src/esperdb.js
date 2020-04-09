@@ -1,9 +1,6 @@
 import EsperStore from './interface/store';
 import EsperEncryption from './interface/encryption';
 
-import EsperKernel from './kernel/kernel';
-import EsperIndexer from './kernel/indexer';
-
 import EsperCollection from './collection';
 import EsperQuery from './query';
 import EsperError from './error';
@@ -11,8 +8,8 @@ import EsperError from './error';
 import EsperLog from './utils/log';
 
 /// constants
-const ESPER_METADATA_KEY = 'esper-metadata';
-const ESPER_COLLECTION_PREFIX = 'esper-collection-';
+const ESPER_METADATA_KEY = 'esper-meta';
+const ESPER_COLLECTION_PREFIX = 'esper-col-';
 
 let _instance = null;
 let _vault = null;
@@ -153,12 +150,6 @@ class Esper {
           versionUpgraded = true;
         }
 
-        const kernel = new EsperKernel({
-          name,
-          store,
-          encryption: _vault.encryption,
-          options: _vault.options
-        });
         for (let name in schema) {
           const collectionStoreKey = `${ESPER_COLLECTION_PREFIX}${name}`;
           const { key, indexes, migrate } = schema[name];

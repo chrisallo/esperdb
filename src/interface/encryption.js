@@ -1,9 +1,9 @@
 
 export default class EsperEncryption {
   encrypt(doc) {
-    return doc;
+    return Promise.resolve(doc);
   }
   decrypt(cipher) {
-    return cipher;
+    return Promise.resolve(cipher);
   }
 }

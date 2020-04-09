@@ -1,12 +1,10 @@
 import EsperQuery from "./query";
 import EsperError from "./error";
 
-import EsperBatchQueue from "./kernel/lib/batchQueue";
-import EsperBlock from "./kernel/lib/block";
+import EsperTransaction from "./kernel/lib/transaction";
 import EsperIndexer from "./kernel/lib/indexer";
 
 import EsperMutex from "./utils/mutex";
-import { clone } from "./utils/clone";
 
 const _privateProps = new WeakMap();
 
@@ -18,7 +16,7 @@ export default class EsperCollection {
     store = null,
     encryption = null
   }) {
-    const batchQueue = new EsperBatchQueue(store);
+    const batchQueue = new EsperTransaction(store);
     const indexers = [];
     let keyIndexer = null;
     for (let i in indexes) {
@@ -58,34 +56,34 @@ export default class EsperCollection {
   get(key) {
     return new Promise((resolve, reject) => {
       if (typeof key === 'string') {
-        const { keyIndexer, store, encryption, mutex } = _privateProps.get(this);
-        if (keyIndexer) {
-          mutex.lock(unlock => {
-            keyIndexer.iterate({ [this.key]: key }, { limit: 1 }, indexItem => {
-              if (indexItem[this.key] === key) {
-                // get the block
-                store.getItem(indexItem.blockKey)
-                  .then(rawBlock => {
-                    if (rawBlock) {
-                      const serializedData = encryption ? encryption.decrypt(rawBlock) : rawBlock;
-                      const block = new EsperBlock({ blockKey: key, serializedData });
-                      resolve(block[key]);
-                    } else {
-                      reject(EsperError.blockNotFound());
-                    }
-                  })
-                  .catch(e => reject(e))
-                  .finally(() => unlock());
-              } else {
-                // data not found
-                resolve(null);
-              }
-            });
-            unlock();
-          });
-        } else {
-          reject(EsperError.keyNotIndexed());
-        }
+        // const { keyIndexer, store, encryption, mutex } = _privateProps.get(this);
+        // if (keyIndexer) {
+        //   mutex.lock(unlock => {
+        //     keyIndexer.iterate({ [this.key]: key }, { limit: 1 }, indexItem => {
+        //       if (indexItem[this.key] === key) {
+        //         // get the block
+        //         store.getItem(indexItem.blockKey)
+        //           .then(rawBlock => {
+        //             if (rawBlock) {
+        //               const serializedData = encryption ? encryption.decrypt(rawBlock) : rawBlock;
+        //               const block = new EsperBlock({ blockKey: key, serializedData });
+        //               resolve(block[key]);
+        //             } else {
+        //               reject(EsperError.blockNotFound());
+        //             }
+        //           })
+        //           .catch(e => reject(e))
+        //           .finally(() => unlock());
+        //       } else {
+        //         // data not found
+        //         resolve(null);
+        //       }
+        //     });
+        //     unlock();
+        //   });
+        // } else {
+        //   reject(EsperError.keyNotIndexed());
+        // }
       } else {
         reject(EsperError.invalidParams(`collection.get(${key})`));
       }

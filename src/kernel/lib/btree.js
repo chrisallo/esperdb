@@ -16,10 +16,7 @@ class EsperBtreeNode {
     min = DEFAULT_MIN_ITEMS,
     unique = DEFAULT_UNIQUE,
     primaryKey = null,
-    compare = DEFAULT_COMPARE,
-
-    // event listeners
-    ondiscard = null
+    compare = DEFAULT_COMPARE
   }) {
     this._nid = nid || ++_seed;
     this.options = { order, min, unique, primaryKey, compare };
@@ -31,7 +28,9 @@ class EsperBtreeNode {
     this.dirty = false;
 
     // event listener
-    this.ondiscard = ondiscard;
+    this.eventHandlers = {
+      onNodeDiscarded: node => { }
+    };
   }
   get order() {
     return this.options.order;
@@ -70,14 +69,17 @@ class EsperBtreeNode {
   }
   spawn() {
     const node = new EsperBtreeNode({
-      ...this.options,
-      ondiscard: this.ondiscard
+      ...this.options
     });
+    node.eventHandlers = this.eventHandlers;
     node.dirty = true;
     return node;
   }
   get(i) { // => Array<data>
     return this.values[i];
+  }
+  on(eventType, handler) {
+    this.eventHandlers[eventType] = handler;
   }
   indexAtValues(values, data) {
     const pk = this.options.primaryKey;
@@ -218,7 +220,8 @@ class EsperBtreeNode {
           // mark dirtiness
           this.dirty = true;
           this.parent.dirty = true;
-          if (this.ondiscard) this.ondiscard(prev);
+          if (this.eventHandlers.onNodeDiscarded)
+            this.eventHandlers.onNodeDiscarded(prev);
         } else if (next) {
           // merge with next node
           this.values = [this.parent.values[index], ...next.values];
@@ -231,7 +234,8 @@ class EsperBtreeNode {
           // mark dirtiness
           this.dirty = true;
           this.parent.dirty = true;
-          if (this.ondiscard) this.ondiscard(next);
+          if (this.eventHandlers.onNodeDiscarded)
+            this.eventHandlers.onNodeDiscarded(next);
         }
         if (this.parent.underflow) {
           this.parent.resolveUnderflow();
@@ -259,10 +263,10 @@ class EsperBtreeNode {
 
       // mark dirtiness
       this.dirty = true;
-      if (this.ondiscard) {
+      if (this.eventHandlers.onNodeDiscarded) {
         for (let i in discardedChildren) {
           if (discardedChildren[i]) {
-            this.ondiscard(discardedChildren[i]);
+            this.eventHandlers.onNodeDiscarded(discardedChildren[i]);
           }
         }
       }
@@ -304,18 +308,20 @@ class EsperBtree {
   get count() {
     return _private.get(this).count;
   }
-  iterateDirtyNodes(handler) { // handler: function(node)
+  getAllDirtyNodes() {
     const { root } = _private.get(this);
+    const list = [];
     const stack = [root];
     while (stack.length > 0) {
       const node = stack.pop();
-      if (node.dirty) handler(node);
+      if (node.dirty) list.push(node);
       for (let i in node.children) {
         if (node.children[i]) {
           stack.push(node.children[i]);
         }
       }
     }
+    return list;
   }
   _iterate({
     data = null,
