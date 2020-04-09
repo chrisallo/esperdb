@@ -7,6 +7,6 @@ describe('esperdb test', function () {
   describe('unit test', function () {
     interfaceTest();
     kernelTest();
-    // utilsTest();
+    utilsTest();
   });
 });
