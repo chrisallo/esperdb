@@ -10,7 +10,7 @@ class EsperIndexer {
   constructor({
     collectionName = '',
     primaryKey = null,
-    columns = []
+    columns = [],
   }) {
     _private.set(this, {
       collectionName,
@@ -24,9 +24,9 @@ class EsperIndexer {
           && columns.length === 1
           && columns[0] === primaryKey,
         compare: (a, b) => {
-          for (let i in this.columns) {
-            const col = this.columns[i].replace(REVERSE_MARKER, '');
-            const rev = REVERSE_MARKER.test(this.columns[i]) ? -1 : 1;
+          for (let i in columns) {
+            const col = columns[i].replace(REVERSE_MARKER, '');
+            const rev = REVERSE_MARKER.test(columns[i]) ? -1 : 1;
             const ta = typeof a[col], tb = typeof b[col], va = a[col], vb = b[col];
             if (ta === tb) {
               if (va !== vb) {
@@ -52,11 +52,16 @@ class EsperIndexer {
     return collectionName;
   }
   get key() {
-    return this.columns.join('>');
+    const { columns } = _private.get(this);
+    return columns.join('>');
+  }
+  get count() {
+    const { btree } = _private.get(this);
+    return btree.count;
   }
   get columns() {
     const { columns } = _private.get(this);
-    return columns;
+    return [...columns];
   }
   iterate(query, options, handler) {
     const { btree } = _private.get(this);
@@ -98,10 +103,11 @@ class EsperIndexer {
     return btree.clear();
   }
   calculateScore(query, options = {}) {
+    const { columns } = _private.get(this);
     let score = 0;
     if (typeof options === 'object' && options !== null) {
       const relatedColumns = query.getRelatedColumns();
-      const indexedColumns = this.columns.map(col => col.replace(/^--/, ''));
+      const indexedColumns = columns.map(col => col.replace(/^--/, ''));
 
       let weight = 1.0;
       for (let j in indexedColumns) {

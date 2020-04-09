@@ -293,6 +293,45 @@ export default function () {
       }
       done();
     });
+    it('put > remove almost all > iterateAll', function (done) {
+      data.forEach(v => {
+        bt.put(v);
+      });
+
+      let remain = 4;
+      for (let i = remain; i < data.length; i++) {
+        bt.remove(data[i]);
+      }
+
+      const list = [];
+      bt.iterateAll((x, i) => {
+        assert.equal(i, list.length);
+        list.push(x);
+      });
+      assert.sameMembers(data.slice(0, remain).map(x => x.k), list.map(x => x.k));
+      for (let i = 1; i < list.length; i++) {
+        assert.isAtLeast(list[i].n, list[i - 1].n);
+      }
+      done();
+    });
+    it('put > remove all > iterateAll', function (done) {
+      data.forEach(v => {
+        bt.put(v);
+      });
+      data.forEach(v => {
+        bt.remove(v);
+      });
+
+      const list = [];
+      bt.iterateAll((x, i) => {
+        list.push(x);
+      });
+      assert.sameMembers([], list.map(x => x.k));
+      for (let i = 1; i < list.length; i++) {
+        assert.isAtLeast(list[i].n, list[i - 1].n);
+      }
+      done();
+    });
     it('put > remove > re-put > iterateAll', function (done) {
       data.forEach(v => {
         bt.put(v);
@@ -301,6 +340,28 @@ export default function () {
         bt.remove(v);
       });
       removed.forEach(v => {
+        bt.put(v);
+      });
+
+      const list = [];
+      bt.iterateAll((x, i) => {
+        assert.equal(i, list.length);
+        list.push(x);
+      });
+      assert.sameMembers(sorted.map(x => x.k), list.map(x => x.k));
+      for (let i = 1; i < list.length; i++) {
+        assert.isAtLeast(list[i].n, list[i - 1].n);
+      }
+      done();
+    });
+    it('put > remove all > re-put all > iterateAll', function (done) {
+      data.forEach(v => {
+        bt.put(v);
+      });
+      data.forEach(v => {
+        bt.remove(v);
+      });
+      data.forEach(v => {
         bt.put(v);
       });
 
@@ -610,6 +671,24 @@ export default function () {
       }
       done();
     });
+    it('put > remove all > iterateAll', function (done) {
+      data.forEach(v => {
+        bt.put(v);
+      });
+      data.forEach(v => {
+        bt.remove(v);
+      });
+
+      const list = [];
+      bt.iterateAll((x, i) => {
+        list.push(x);
+      });
+      assert.sameMembers([], list.map(x => x.n));
+      for (let i = 1; i < list.length; i++) {
+        assert.isAtLeast(list[i].n, list[i - 1].n);
+      }
+      done();
+    });
     it('put > remove > re-put > iterateAll', function (done) {
       data.forEach(v => {
         bt.put(v);
@@ -629,6 +708,28 @@ export default function () {
       assert.sameMembers(sorted.map(x => x.n), list.map(x => x.n));
       for (let i = 1; i < list.length; i++) {
         assert.isAbove(list[i].n, list[i - 1].n);
+      }
+      done();
+    });
+    it('put > remove all > re-put all > iterateAll', function (done) {
+      data.forEach(v => {
+        bt.put(v);
+      });
+      data.forEach(v => {
+        bt.remove(v);
+      });
+      data.forEach(v => {
+        bt.put(v);
+      });
+
+      const list = [];
+      bt.iterateAll((x, i) => {
+        assert.equal(i, list.length);
+        list.push(x);
+      });
+      assert.sameMembers(sorted.map(x => x.n), list.map(x => x.n));
+      for (let i = 1; i < list.length; i++) {
+        assert.isAtLeast(list[i].n, list[i - 1].n);
       }
       done();
     });

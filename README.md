@@ -46,6 +46,8 @@ interface EsperStore {
 }
 ```
 
+> NOTE: If `EsperStore` implementation is not provided, it uses default built-in memory-based database instead.
+
 ### Initialization
 
 Suppose that we're going to store the product data with its price. The data model of the `Product` looks like this:
@@ -73,14 +75,6 @@ esperdb
   .schema({
     // collection name
     name: 'Product',
-
-    // data model
-    model: {
-      id: 'string',
-      name: 'string',
-      price: 'number',
-      createdAt: 'number'
-    },
 
     // primary key
     key: 'id',
@@ -125,7 +119,10 @@ interface EsperCollection {
   key: string;
 
   get: (key: string) => Promise<object>;
-  getAll: (where?: EsperQuery, options?: { offset?: number, limit?: number }) => Promise<object[]>;
+  getAll: (
+    where?: EsperQuery,
+    options?: { skip?: number, limit?: number }
+  ) => Promise<object[]>;
   count: (where?: EsperQuery) => Promise<number>;
 
   insert: (doc: object) => Promise<object>;
@@ -144,21 +141,19 @@ You can create a query for data manipulation and fetch operation. The following 
 ```js
 import { EsperQuery } from 'esperdb';
 
-const getCheapProducts = () => {
-  return new Promise(async resolve => {
-    // create new query
-    const query = new EsperQuery({
-      price: { '<=': 2 }
-    });
-
-    const col = esperdb.collection('Product');
-    const cheapProducts = await col.getAll(query, {
-      offset: 0,
-      limit: 20,
-      orderBy: '--createdAt'
-    });
-    resolve(cheapProducts);
+const getCheapProducts = async () => {
+  // create new query
+  const query = new EsperQuery({
+    price: { '<=': 2.0 }
   });
+
+  const col = esperdb.collection('Product');
+  const cheapProducts = await col.getAll(query, {
+    skip: 0,
+    limit: 20,
+    orderBy: '--createdAt'
+  });
+  return cheapProducts;
 };
 ```
 
@@ -180,8 +175,8 @@ The `CustomEncryption` is an implementation of `EsperEncryption`.
 
 ```ts
 interface EsperEncryption {
-  encrypt(data: object): Promise<string>;
-  decrypt(cipher: string): Promise<object>;
+  encrypt(data: string): Promise<string>;
+  decrypt(cipher: string): Promise<string>;
 }
 ```
 

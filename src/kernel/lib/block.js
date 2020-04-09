@@ -1,8 +1,14 @@
 
 export default class EsperBlock {
-  constructor(blockKey, serializedData = null) {
+  constructor({
+    blockKey,
+    serializedData = null
+  }) {
     this.key = blockKey;
-    this.data = serializedData ? JSON.parse(serializedData) : {};
+    this.data = {};
+    if (serializedData) {
+      this.data = JSON.parse(serializedData);
+    }
   }
   static createKey(label, index = 0) {
     return `${label.toLowerCase()}-blk-${index}`;
@@ -11,7 +17,8 @@ export default class EsperBlock {
     return Object.keys(this.data).length;
   }
   serialize() {
-    return JSON.stringify(this.data);
+    const stringified = JSON.stringify(this.data);
+    return stringified;
   }
   get(key) {
     return this.data[key] || null;

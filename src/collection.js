@@ -1,5 +1,10 @@
 import EsperQuery from "./query";
 import EsperError from "./error";
+
+import EsperBatchQueue from "./kernel/lib/batchQueue";
+import EsperBlock from "./kernel/lib/block";
+import EsperIndexer from "./kernel/lib/indexer";
+
 import EsperMutex from "./utils/mutex";
 import { clone } from "./utils/clone";
 
@@ -9,16 +14,32 @@ export default class EsperCollection {
   constructor({
     name = '',
     key = '',
-    model = null,
-    indexer = null,
-    kernel = null
+    indexes = [],
+    store = null,
+    encryption = null
   }) {
+    const batchQueue = new EsperBatchQueue(store);
+    const indexers = [];
+    let keyIndexer = null;
+    for (let i in indexes) {
+      const indexer = new EsperIndexer({
+        collectionName: name,
+        primaryKey: key,
+        columns: indexes[i]
+      });
+      indexers.push(indexer);
+      if (indexer.columns.length === 1 && indexer.columns[0] === key) {
+        keyIndexer = indexer;
+      }
+    }
     _privateProps.set(this, {
       name,
       key,
-      model,
-      indexer,
-      kernel,
+      batchQueue,
+      keyIndexer,
+      indexers,
+      store,
+      encryption,
       mutex: new EsperMutex()
     });
   }
@@ -35,25 +56,39 @@ export default class EsperCollection {
     return clone(model);
   }
   get indexes() {
-    const { indexer } = _privateProps.get(this);
-    return clone(indexer.indexes);
+    const { indexers } = _privateProps.get(this);
+    return indexers.map(idxr => idxr.columns);
   }
   get(key) {
     return new Promise((resolve, reject) => {
       if (typeof key === 'string') {
-        const { kernel, mutex } = _privateProps.get(this);
-        if (kernel) {
-          mutex.lock(async unlock => {
-            try {
-              resolve(await kernel.get(this.name, key));
-            } catch (e) {
-              reject(e);
-            } finally {
-              unlock();
-            }
+        const { keyIndexer, store, encryption, mutex } = _privateProps.get(this);
+        if (keyIndexer) {
+          mutex.lock(unlock => {
+            keyIndexer.iterate({ [this.key]: key }, { limit: 1 }, indexItem => {
+              if (indexItem[this.key] === key) {
+                // get the block
+                store.getItem(indexItem.blockKey)
+                  .then(rawBlock => {
+                    if (rawBlock) {
+                      const serializedData = encryption ? encryption.decrypt(rawBlock) : rawBlock;
+                      const block = new EsperBlock({ blockKey: key, serializedData });
+                      resolve(block[key]);
+                    } else {
+                      reject(EsperError.blockNotFound());
+                    }
+                  })
+                  .catch(e => reject(e))
+                  .finally(() => unlock());
+              } else {
+                // data not found
+                resolve(null);
+              }
+            });
+            unlock();
           });
         } else {
-          reject(EsperError.kernelNotLoaded());
+          reject(EsperError.keyNotIndexed());
         }
       } else {
         reject(EsperError.invalidParams(`collection.get(${key})`));
@@ -63,74 +98,45 @@ export default class EsperCollection {
   getAll(where, options = {}) {
     return new Promise((resolve, reject) => {
       if ((where instanceof EsperQuery || where === null) && typeof options === 'object') {
-        const { kernel, indexer, mutex } = _privateProps.get(this);
-        if (kernel) {
-          mutex.lock(async unlock => {
-            try {
-              const index = indexer.findBestIndexForQuery(where, options);
-              if (index) {
-                // TODO: fetch indextable for listing
-              } else {
-                let result = [];
-                await kernel.each(this.name, async (_, item) => {
-                  if (!where || where.match(item)) {
-                    result.push(item);
-                  }
-                });
-                if (options.orderBy) {
-                  const sortKey = options.orderBy.replace(/^--/, '');
-                  const desc = /^--/.test(options.orderBy);
-                  result = result.sort((a, b) => desc ? b[sortKey] - a[sortKey] : a[sortKey] - b[sortKey]);
-                }
-                if (options.offset) {
-                  result = result.slice(options.offset);
-                }
-                if (options.limit) {
-                  result = result.slice(0, options.limit);
-                }
-                resolve(result);
-              }
-            } catch (e) {
-              reject(e);
-            } finally {
-              unlock();
-            }
+        const { indexers, store, mutex } = _privateProps.get(this);
+        const best = { indexer: null, score: -1 };
+        for (let i in indexers) {
+          const score = indexers[i].calculateScore(where, options);
+          if (score > best.score) {
+            best.indexer = indexers[i];
+            best.score = score;
+          }
+        }
+        if (best.indexer) {
+          mutex.lock(unlock => {
+            const indexerQuery = {};
+            // TODO: create indexerQuery
+
+            // TODO: find values
+            resolve([]);
+
+            unlock();
           });
         } else {
-          reject(EsperError.kernelNotLoaded());
+          reject(EsperError.keyNotIndexed());
         }
       } else {
         reject(EsperError.invalidParams(`collection.getAll()`));
       }
-
     });
   }
   count(where) {
     return new Promise((resolve, reject) => {
       if (where instanceof EsperQuery) {
-        const { kernel, mutex } = _privateProps.get(this);
-        if (kernel) {
-          mutex.lock(async unlock => {
-            try {
-              if (where) {
-                let count = 0;
-                await kernel.each(this.name, async (_, item) => {
-                  if (where.match(item)) {
-                    count++;
-                  }
-                });
-                resolve(count);
-              } else {
-                resolve(await kernel.count(this.name));
-              }
-            } catch (e) {
-              reject(e);
-            } finally {
-              unlock();
-            }
-          });
+        this.getAll(where)
+          .then(list => resolve(list.length))
+          .catch(err => reject(err));
+      } else if (where === null) {
+        const { keyIndexer } = _privateProps.get(this);
+        if (keyIndexer) {
+          resolve(keyIndexer.count);
         } else {
-          reject(EsperError.kernelNotLoaded());
+          reject(EsperError.keyNotIndexed());
         }
       } else {
         reject(EsperError.invalidParams(`collection.count()`));
@@ -140,25 +146,7 @@ export default class EsperCollection {
   insert(doc) {
     return new Promise((resolve, reject) => {
       if (typeof doc === 'object' && doc !== null && doc.hasOwnProperty(this.key)) {
-        const { kernel, mutex } = _privateProps.get(this);
-        if (kernel) {
-          mutex.lock(async unlock => {
-            try {
-              const item = await kernel.get(this.name, doc[this.key], doc);
-              if (!item) {
-                resolve(await kernel.set(this.name, doc[this.key], doc));
-              } else {
-                throw EsperError.dataAlreadyExists();
-              }
-            } catch (e) {
-              reject(e);
-            } finally {
-              unlock();
-            }
-          });
-        } else {
-          reject(EsperError.kernelNotLoaded());
-        }
+        // TODO:
       } else {
         reject(EsperError.invalidParams(`collection.insert(${doc})`));
       }
@@ -167,20 +155,7 @@ export default class EsperCollection {
   upsert(doc) {
     return new Promise((resolve, reject) => {
       if (typeof doc === 'object' && doc !== null && doc.hasOwnProperty(this.key)) {
-        const { kernel, mutex } = _privateProps.get(this);
-        if (kernel) {
-          mutex.lock(async unlock => {
-            try {
-              resolve(await kernel.set(this.name, doc[this.key], doc));
-            } catch (e) {
-              reject(e);
-            } finally {
-              unlock();
-            }
-          });
-        } else {
-          reject(EsperError.kernelNotLoaded());
-        }
+        // TODO:
       } else {
         reject(EsperError.invalidParams(`collection.upsert(${doc})`));
       }
@@ -189,25 +164,7 @@ export default class EsperCollection {
   update(doc) {
     return new Promise((resolve, reject) => {
       if (typeof doc === 'object' && doc !== null && doc.hasOwnProperty(this.key)) {
-        const { kernel, mutex } = _privateProps.get(this);
-        if (kernel) {
-          mutex.lock(async unlock => {
-            try {
-              const item = await kernel.get(this.name, doc[this.key], doc);
-              if (item) {
-                resolve(await kernel.set(this.name, doc[this.key], doc));
-              } else {
-                throw EsperError.dataNotFound();
-              }
-            } catch (e) {
-              reject(e);
-            } finally {
-              unlock();
-            }
-          });
-        } else {
-          reject(EsperError.kernelNotLoaded());
-        }
+        // TODO:
       } else {
         reject(EsperError.invalidParams(`collection.update(${doc})`));
       }
@@ -216,20 +173,7 @@ export default class EsperCollection {
   remove(key) {
     return new Promise((resolve, reject) => {
       if (typeof key === 'string') {
-        const { kernel, mutex } = _privateProps.get(this);
-        if (kernel) {
-          mutex.lock(async unlock => {
-            try {
-              resolve(await kernel.remove(this.name, key));
-            } catch (e) {
-              reject(e);
-            } finally {
-              unlock();
-            }
-          });
-        } else {
-          reject(EsperError.kernelNotLoaded());
-        }
+        // TODO:
       } else {
         reject(EsperError.invalidParams(`collection.remove(${key})`));
       }
@@ -238,30 +182,7 @@ export default class EsperCollection {
   updateIf(setter, where) {
     return new Promise((resolve, reject) => {
       if (typeof setter === 'object' && setter !== null && where instanceof EsperQuery) {
-        const { kernel, mutex } = _privateProps.get(this);
-        if (kernel) {
-          mutex.lock(async unlock => {
-            try {
-              const updatedItems = [];
-              await kernel.each(this.name, async (key, item) => {
-                if (where.match(item)) {
-                  for (let column in setter) {
-                    item[column] = setter[column];
-                  }
-                  await kernel.set(this.name, key, item);
-                  updatedItems.push(item);
-                }
-              });
-              resolve(updatedItems);
-            } catch (e) {
-              reject(e);
-            } finally {
-              unlock();
-            }
-          });
-        } else {
-          reject(EsperError.kernelNotLoaded());
-        }
+        // TODO:
       } else {
         reject(EsperError.invalidParams(`collection.updateIf()`));
       }
@@ -271,27 +192,7 @@ export default class EsperCollection {
   removeIf(where) {
     return new Promise((resolve, reject) => {
       if (where instanceof EsperQuery) {
-        const { kernel, mutex } = _privateProps.get(this);
-        if (kernel) {
-          mutex.lock(async unlock => {
-            try {
-              const removedItems = [];
-              await kernel.each(this.name, async (key, item) => {
-                if (where.match(item)) {
-                  await kernel.remove(this.name, key);
-                  removedItems.push(item);
-                }
-              });
-              resolve(removedItems);
-            } catch (e) {
-              reject(e);
-            } finally {
-              unlock();
-            }
-          });
-        } else {
-          reject(EsperError.kernelNotLoaded());
-        }
+        // TODO:
       } else {
         reject(EsperError.invalidParams(`collection.removeIf()`));
       }
@@ -300,21 +201,7 @@ export default class EsperCollection {
   }
   clear() {
     return new Promise((resolve, reject) => {
-      const { kernel, mutex } = _privateProps.get(this);
-      if (kernel) {
-        mutex.lock(async unlock => {
-          try {
-            await kernel.clear(this.name);
-            resolve();
-          } catch (e) {
-            reject(e);
-          } finally {
-            unlock();
-          }
-        });
-      } else {
-        reject(EsperError.kernelNotLoaded());
-      }
+      // TODO:
     });
   }
 }

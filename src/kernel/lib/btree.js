@@ -9,17 +9,29 @@ let _seed = 0;
 
 class EsperBtreeNode {
   constructor({
+    nid = null,
+
+    /// configurations
     order = DEFAULT_ORDER,
     min = DEFAULT_MIN_ITEMS,
     unique = DEFAULT_UNIQUE,
     primaryKey = null,
-    compare = DEFAULT_COMPARE
+    compare = DEFAULT_COMPARE,
+
+    // event listeners
+    ondiscard = null
   }) {
-    this._nid = ++_seed;
+    this._nid = nid || ++_seed;
     this.options = { order, min, unique, primaryKey, compare };
     this.values = []; // array of array<data>
     this.parent = null;
     this.children = [null]; // always have a trailing child
+
+    // operation flags
+    this.dirty = false;
+
+    // event listener
+    this.ondiscard = ondiscard;
   }
   get order() {
     return this.options.order;
@@ -57,23 +69,27 @@ class EsperBtreeNode {
     return this.size < this.options.min;
   }
   spawn() {
-    return new EsperBtreeNode({ ...this.options });
+    const node = new EsperBtreeNode({
+      ...this.options,
+      ondiscard: this.ondiscard
+    });
+    node.dirty = true;
+    return node;
   }
   get(i) { // => Array<data>
     return this.values[i];
   }
-  indexAtValues(index, val) {
+  indexAtValues(values, data) {
     const pk = this.options.primaryKey;
     if (pk) {
-      for (let i in this.values[index]) {
-        const item = this.values[index][i];
-        if (item[pk] === val[pk]) {
+      for (let i in values) {
+        if (values[i][pk] === data[pk]) {
           return parseInt(i);
         }
       }
       return -1;
     } else {
-      return this.values[index].indexOf(val);
+      return this.values[index].indexOf(data);
     }
   }
   placeOf(val) { // => [index, isMatch]
@@ -99,6 +115,11 @@ class EsperBtreeNode {
           prev.children[prev.children.length - 1].parent = prev;
         }
         this.parent.values[index - 1] = this.values.shift();
+
+        // mark dirtiness
+        prev.dirty = true;
+        this.dirty = true;
+        this.parent.dirty = true;
       } else if (next && next.hasSpace) {
         // shift to next
         next.values.unshift(this.parent.values[index]);
@@ -107,6 +128,11 @@ class EsperBtreeNode {
           next.children[0].parent = next;
         }
         this.parent.values[index] = this.values.pop();
+
+        // mark dirtiness
+        next.dirty = true;
+        this.dirty = true;
+        this.parent.dirty = true;
       } else {
         // split
         const right = this.spawn();
@@ -126,6 +152,10 @@ class EsperBtreeNode {
         if (this.parent.overflow) {
           this.parent.resolveOverflow();
         }
+
+        // mark dirtiness
+        this.dirty = true;
+        this.parent.dirty = true;
       }
     } else {
       // this is root
@@ -143,6 +173,9 @@ class EsperBtreeNode {
 
       this.values = [this.values[pivot]];
       this.children = [left, right];
+
+      // mark dirtiness
+      this.dirty = true;
     }
   }
   resolveUnderflow() {
@@ -154,6 +187,11 @@ class EsperBtreeNode {
         this.children.unshift(prev.children.pop());
         if (this.children[0]) this.children[0].parent = this;
         this.parent.values[index - 1] = prev.values.pop();
+
+        // mark dirtiness
+        prev.dirty = true;
+        this.dirty = true;
+        this.parent.dirty = true;
       } else if (next && next.hasExtra) {
         // shift from next sibling
         this.values.push(this.parent.values[index]);
@@ -162,21 +200,38 @@ class EsperBtreeNode {
           this.children[this.children.length - 1].parent = this;
         }
         this.parent.values[index] = next.values.shift();
+
+        // mark dirtiness
+        next.dirty = true;
+        this.dirty = true;
+        this.parent.dirty = true;
       } else {
         if (prev) {
+          // merge with previous node
           this.values = [...prev.values, this.parent.values[index - 1]];
           this.children = [...prev.children, ...this.children];
           this.children.forEach(c => { if (c) c.parent = this; });
 
           this.parent.values.splice(index - 1, 1);
           this.parent.children.splice(index - 1, 1);
+
+          // mark dirtiness
+          this.dirty = true;
+          this.parent.dirty = true;
+          if (this.ondiscard) this.ondiscard(prev);
         } else if (next) {
+          // merge with next node
           this.values = [this.parent.values[index], ...next.values];
           this.children = [...this.children, ...next.children];
           this.children.forEach(c => { if (c) c.parent = this; });
 
           this.parent.values.splice(index, 1);
           this.parent.children.splice(index + 1, 1);
+
+          // mark dirtiness
+          this.dirty = true;
+          this.parent.dirty = true;
+          if (this.ondiscard) this.ondiscard(next);
         }
         if (this.parent.underflow) {
           this.parent.resolveUnderflow();
@@ -184,17 +239,33 @@ class EsperBtreeNode {
       }
     } else {
       // if it's root, merge all the children
-      this.values = [
-        ...this.children
-          .map(c => c ? c.values : [])
-          .reduce((a, c) => a.concat(c), [])
-      ];
+      const discardedChildren = this.children;
+      const mergedValues = [];
+      for (let i = 0; i < this.children.length; i++) {
+        const child = this.children[i];
+        if (child) {
+          mergedValues.push(...child.values);
+        }
+        if (i < this.values.length) {
+          mergedValues.push(this.values[i]);
+        }
+      }
       this.children = [
         ...this.children
           .map(c => c ? c.children : [])
           .reduce((a, c) => a.concat(c), [])
       ];
       this.children.forEach(c => { if (c) c.parent = this; });
+
+      // mark dirtiness
+      this.dirty = true;
+      if (this.ondiscard) {
+        for (let i in discardedChildren) {
+          if (discardedChildren[i]) {
+            this.ondiscard(discardedChildren[i]);
+          }
+        }
+      }
     }
   }
   prettyprint({ depth = 0, formatter = null }) {
@@ -224,11 +295,27 @@ class EsperBtree {
       count: 0
     });
   }
+  get order() {
+    return _private.get(this).root.order;
+  }
   get unique() {
     return _private.get(this).root.unique;
   }
   get count() {
     return _private.get(this).count;
+  }
+  iterateDirtyNodes(handler) { // handler: function(node)
+    const { root } = _private.get(this);
+    const stack = [root];
+    while (stack.length > 0) {
+      const node = stack.pop();
+      if (node.dirty) handler(node);
+      for (let i in node.children) {
+        if (node.children[i]) {
+          stack.push(node.children[i]);
+        }
+      }
+    }
   }
   _iterate({
     data = null,
@@ -269,7 +356,7 @@ class EsperBtree {
       const [index, match] = node.placeOf(val);
       if (match) {
         if (!this.unique) {
-          const valueIndex = node.indexAtValues(index, val);
+          const valueIndex = node.indexAtValues(node.values[index], val);
           if (valueIndex < 0) {
             node.values[index].push(val);
             _private.get(this).count++;
@@ -293,7 +380,7 @@ class EsperBtree {
       return true;
     } else {
       if (!this.unique) {
-        const valueIndex = node.indexAtValues(index, val);
+        const valueIndex = node.indexAtValues(node.values[index], val);
         if (valueIndex < 0) {
           node.values[index].push(val);
           _private.get(this).count++;
@@ -329,7 +416,7 @@ class EsperBtree {
             nextLeafNode.resolveUnderflow();
           }
         } else {
-          const valueIndex = node.indexAtValues(index, val);
+          const valueIndex = node.indexAtValues(node.values[index], val);
           if (valueIndex > -1)
             node.values[index].splice(valueIndex, 1);
         }
@@ -347,7 +434,7 @@ class EsperBtree {
           node.resolveUnderflow();
         }
       } else {
-        const valueIndex = node.indexAtValues(index, val);
+        const valueIndex = node.indexAtValues(node.values[index], val);
         if (valueIndex > -1)
           node.values[index].splice(valueIndex, 1);
       }

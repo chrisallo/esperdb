@@ -1,9 +1,9 @@
 
 export default class EsperEncryption {
   encrypt(doc) {
-    return JSON.stringify(doc);
+    return doc;
   }
   decrypt(cipher) {
-    return JSON.parse(cipher);
+    return cipher;
   }
 }

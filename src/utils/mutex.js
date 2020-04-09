@@ -1,3 +1,4 @@
+import EsperLog from "./log";
 
 export default class EsperMutex {
   constructor() {
@@ -7,7 +8,12 @@ export default class EsperMutex {
   lock(routine) {
     if (!this.locked) {
       this.locked = true;
-      routine(() => this.unlock());
+      try {
+        routine(() => this.unlock());
+      } catch (e) {
+        EsperLog.error(e.message);
+        this.unlock();
+      }
     } else {
       this.queue.push(routine);
     }
