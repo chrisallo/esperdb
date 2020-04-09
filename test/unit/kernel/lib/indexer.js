@@ -22,20 +22,18 @@ export default function () {
       return x.a === y.a ? y.b - x.b : x.a - y.a;
     });
 
-    before(function (done) {
+    before(function () {
       indexer = new EsperIndexer({
         collectionName: 'TestCollection',
         primaryKey: 'pk',
         columns: ['a', '--b']
       });
-      done();
     });
-    afterEach(function (done) {
+    afterEach(function () {
       indexer.clear();
-      done();
     });
 
-    it('put > iterate', function (done) {
+    it('put > iterate', function () {
       data.forEach(v => {
         indexer.put(v);
       });
@@ -49,9 +47,8 @@ export default function () {
         list.map(x => x.pk),
         sorted.slice(index).map(x => x.pk)
       );
-      done();
     });
-    it('put > iterate limit', function (done) {
+    it('put > iterate limit', function () {
       data.forEach(v => {
         indexer.put(v);
       });
@@ -66,9 +63,8 @@ export default function () {
         list.map(x => x.pk),
         sorted.slice(index, index + limit).map(x => x.pk)
       );
-      done();
     });
-    it('put > iterate skip limit', function (done) {
+    it('put > iterate skip limit', function () {
       data.forEach(v => {
         indexer.put(v);
       });
@@ -84,9 +80,8 @@ export default function () {
         list.map(x => x.pk),
         sorted.slice(index + skip, index + limit + skip).map(x => x.pk)
       );
-      done();
     });
-    it('put > replace > search old', function (done) {
+    it('put > replace > search old', function () {
       data.forEach(v => {
         indexer.put(v);
       });
@@ -105,9 +100,8 @@ export default function () {
           return false;
         }
       });
-      done();
     });
-    it('put > replace > search new', function (done) {
+    it('put > replace > search new', function () {
       data.forEach(v => {
         indexer.put(v);
       });
@@ -126,9 +120,8 @@ export default function () {
           return false;
         }
       });
-      done();
     });
-    it('put > remove > search', function (done) {
+    it('put > remove > search', function () {
       data.forEach(v => {
         indexer.put(v);
       });
@@ -136,9 +129,8 @@ export default function () {
       indexer.iterate(data[0], null, item => {
         assert.isFalse(item.pk === data[0].pk);
       });
-      done();
     });
-    it('put > clear > search', function (done) {
+    it('put > clear > search', function () {
       data.forEach(v => {
         indexer.put(v);
       });
@@ -146,7 +138,6 @@ export default function () {
       indexer.iterate(data[0], null, item => {
         assert.isFalse(item.pk === data[0].pk);
       });
-      done();
     });
   });
 }

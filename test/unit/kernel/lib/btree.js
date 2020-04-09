@@ -40,20 +40,18 @@ export default function () {
 
     let bt = null;
 
-    before(function (done) {
+    before(function () {
       bt = new EsperBtree({
         order: 50,
         unique: false,
         primaryKey: 'k',
         compare: (a, b) => a.n - b.n
       });
-      done();
     });
-    afterEach(function (done) {
+    afterEach(function () {
       bt.clear();
-      done();
     });
-    it('put > iterateAll', function (done) {
+    it('put > iterateAll', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -67,9 +65,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAtLeast(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > iterateAll break', function (done) {
+    it('put > iterateAll break', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -85,9 +82,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAtLeast(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > iterateFrom match top', function (done) {
+    it('put > iterateFrom match top', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -103,9 +99,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAtLeast(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > iterateFrom not match top', function (done) {
+    it('put > iterateFrom not match top', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -121,9 +116,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAtLeast(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > iterateFrom match middle', function (done) {
+    it('put > iterateFrom match middle', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -139,9 +133,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAtLeast(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > iterateFrom not match middle', function (done) {
+    it('put > iterateFrom not match middle', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -157,9 +150,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAtLeast(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > iterateFrom match bottom', function (done) {
+    it('put > iterateFrom match bottom', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -175,9 +167,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAtLeast(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > iterateFrom not match bottom', function (done) {
+    it('put > iterateFrom not match bottom', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -193,9 +184,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAtLeast(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > iterateFrom not match exceed bottom', function (done) {
+    it('put > iterateFrom not match exceed bottom', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -206,9 +196,8 @@ export default function () {
         list.push(x);
       });
       assert.sameMembers([], list);
-      done();
     });
-    it('put > iterateFrom match break', function (done) {
+    it('put > iterateFrom match break', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -226,9 +215,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAtLeast(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > iterateFrom not match break', function (done) {
+    it('put > iterateFrom not match break', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -246,9 +234,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAtLeast(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > update > iterateAll', function (done) {
+    it('put > update > iterateAll', function () {
       data.forEach(v => {
         bt.put(v);
       });
@@ -272,9 +259,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAtLeast(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > remove > iterateAll', function (done) {
+    it('put > remove > iterateAll', function () {
       data.forEach(v => {
         bt.put(v);
       });
@@ -291,9 +277,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAtLeast(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > remove almost all > iterateAll', function (done) {
+    it('put > remove almost all > iterateAll', function () {
       data.forEach(v => {
         bt.put(v);
       });
@@ -312,9 +297,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAtLeast(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > remove all > iterateAll', function (done) {
+    it('put > remove all > iterateAll', function () {
       data.forEach(v => {
         bt.put(v);
       });
@@ -330,9 +314,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAtLeast(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > remove > re-put > iterateAll', function (done) {
+    it('put > remove > re-put > iterateAll', function () {
       data.forEach(v => {
         bt.put(v);
       });
@@ -352,9 +335,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAtLeast(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > remove all > re-put all > iterateAll', function (done) {
+    it('put > remove all > re-put all > iterateAll', function () {
       data.forEach(v => {
         bt.put(v);
       });
@@ -374,7 +356,6 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAtLeast(list[i].n, list[i - 1].n);
       }
-      done();
     });
   });
   describe('btree unique', function () {
@@ -415,19 +396,17 @@ export default function () {
 
     let bt = null;
 
-    before(function (done) {
+    before(function () {
       bt = new EsperBtree({
         order: 50,
         unique: true,
         compare: (a, b) => a.n - b.n
       });
-      done();
     });
-    beforeEach(function (done) {
+    afterEach(function () {
       bt.clear();
-      done();
     });
-    it('put > iterateAll', function (done) {
+    it('put > iterateAll', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -441,9 +420,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAbove(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > iterateAll break', function (done) {
+    it('put > iterateAll break', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -459,9 +437,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAbove(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > iterateFrom match top', function (done) {
+    it('put > iterateFrom match top', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -477,9 +454,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAbove(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > iterateFrom not match top', function (done) {
+    it('put > iterateFrom not match top', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -495,9 +471,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAbove(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > iterateFrom match middle', function (done) {
+    it('put > iterateFrom match middle', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -513,9 +488,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAbove(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > iterateFrom not match middle', function (done) {
+    it('put > iterateFrom not match middle', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -531,9 +505,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAbove(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > iterateFrom match bottom', function (done) {
+    it('put > iterateFrom match bottom', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -549,9 +522,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAbove(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > iterateFrom not match bottom', function (done) {
+    it('put > iterateFrom not match bottom', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -567,9 +539,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAbove(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > iterateFrom not match exceed bottom', function (done) {
+    it('put > iterateFrom not match exceed bottom', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -581,9 +552,8 @@ export default function () {
         list.push(x);
       });
       assert.sameMembers([], list);
-      done();
     });
-    it('put > iterateFrom match break', function (done) {
+    it('put > iterateFrom match break', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -601,9 +571,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAbove(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > iterateFrom not match break', function (done) {
+    it('put > iterateFrom not match break', function () {
       data.forEach(value => {
         bt.put(value);
       });
@@ -621,9 +590,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAbove(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > update > iterateAll', function (done) {
+    it('put > update > iterateAll', function () {
       data.forEach(v => {
         bt.put(v);
       });
@@ -647,9 +615,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAbove(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > remove > iterateAll', function (done) {
+    it('put > remove > iterateAll', function () {
       data.forEach(v => {
         bt.put(v);
       });
@@ -669,9 +636,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAbove(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > remove all > iterateAll', function (done) {
+    it('put > remove all > iterateAll', function () {
       data.forEach(v => {
         bt.put(v);
       });
@@ -687,9 +653,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAtLeast(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > remove > re-put > iterateAll', function (done) {
+    it('put > remove > re-put > iterateAll', function () {
       data.forEach(v => {
         bt.put(v);
       });
@@ -709,9 +674,8 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAbove(list[i].n, list[i - 1].n);
       }
-      done();
     });
-    it('put > remove all > re-put all > iterateAll', function (done) {
+    it('put > remove all > re-put all > iterateAll', function () {
       data.forEach(v => {
         bt.put(v);
       });
@@ -731,7 +695,6 @@ export default function () {
       for (let i = 1; i < list.length; i++) {
         assert.isAtLeast(list[i].n, list[i - 1].n);
       }
-      done();
     });
   });
 }
