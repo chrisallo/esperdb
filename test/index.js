@@ -6,7 +6,7 @@ import utilsTest from './unit/utils';
 describe('esperdb test', function () {
   describe('unit test', function () {
     interfaceTest();
-    kernelTest();
-    utilsTest();
+    // kernelTest();
+    // utilsTest();
   });
 });
